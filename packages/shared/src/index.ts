@@ -31,3 +31,5 @@ export * from './utils/stats';
 export * from './utils/run-diff';
 export * from './utils/ssrf';
 export * from './utils/csv';
+
+export * from './demo/shopbot-suite';

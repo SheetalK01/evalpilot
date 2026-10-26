@@ -8,7 +8,9 @@ import {
   RUN_TRIGGERS,
   SEVERITIES,
   TARGET_TYPES,
+  TRACE_STATUSES,
 } from '../enums';
+import { USAGE_RANGES } from './trace';
 import { checkResultSchema, checkSchema } from './checks';
 
 /**
@@ -271,3 +273,97 @@ export type RedteamReportResponse = z.infer<typeof redteamReportSchema>;
 
 export const redteamCreatedSchema = z.object({ redteamRunId: z.string(), status: z.enum(REDTEAM_STATUSES) });
 export type RedteamCreatedResponse = z.infer<typeof redteamCreatedSchema>;
+
+// ─── Traces & usage ─────────────────────────────────────────────────────────
+
+/** A trace in the live feed: previews instead of full text, to keep lists light. */
+export const traceListItemSchema = z.object({
+  id: z.string(),
+  projectId: z.string(),
+  externalId: z.string().nullable(),
+  name: z.string(),
+  model: z.string().nullable(),
+  inputPreview: z.string().nullable(),
+  outputPreview: z.string().nullable(),
+  latencyMs: z.number().int(),
+  inputTokens: z.number().int(),
+  outputTokens: z.number().int(),
+  estCostUsd: z.number(),
+  status: z.enum(TRACE_STATUSES),
+  error: z.string().nullable(),
+  startedAt: isoDate,
+  createdAt: isoDate,
+});
+export type TraceListItemResponse = z.infer<typeof traceListItemSchema>;
+
+export const traceSchema = traceListItemSchema.extend({
+  input: z.string().nullable(),
+  output: z.string().nullable(),
+  metadata: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()])).nullable(),
+});
+export type TraceResponse = z.infer<typeof traceSchema>;
+
+export const traceIngestResultSchema = z.object({ accepted: z.number().int() });
+export type TraceIngestResultResponse = z.infer<typeof traceIngestResultSchema>;
+
+export const usageBucketSchema = z.object({
+  start: isoDate,
+  requests: z.number().int(),
+  errors: z.number().int(),
+  p95LatencyMs: z.number().int().nullable(),
+  tokens: z.number().int(),
+  costUsd: z.number(),
+});
+export type UsageBucket = z.infer<typeof usageBucketSchema>;
+
+export const usageSchema = z.object({
+  range: z.enum(USAGE_RANGES),
+  bucketMinutes: z.number().int(),
+  totals: z.object({
+    requests: z.number().int(),
+    errors: z.number().int(),
+    /** 0–1 */
+    errorRate: z.number(),
+    avgLatencyMs: z.number().int().nullable(),
+    p95LatencyMs: z.number().int().nullable(),
+    inputTokens: z.number().int(),
+    outputTokens: z.number().int(),
+    costUsd: z.number(),
+  }),
+  buckets: z.array(usageBucketSchema),
+  topModels: z.array(z.object({ model: z.string(), requests: z.number().int(), costUsd: z.number() })),
+});
+export type UsageResponse = z.infer<typeof usageSchema>;
+
+// ─── CLI (API-key) responses ────────────────────────────────────────────────
+
+/** `GET /v1/runs/:id`: the run plus its results, so the CLI can print a table. */
+export const v1RunSchema = runSchema.extend({ results: z.array(testResultSchema) });
+export type V1RunResponse = z.infer<typeof v1RunSchema>;
+
+// ─── Dashboard ──────────────────────────────────────────────────────────────
+
+export const dashboardSchema = z.object({
+  counts: z.object({
+    projects: z.number().int(),
+    suites: z.number().int(),
+    runs: z.number().int(),
+    traces24h: z.number().int(),
+  }),
+  /** Finished runs, oldest first. */
+  passRateTrend: z.array(
+    z.object({ runId: z.string(), suiteName: z.string(), passRate: z.number(), createdAt: isoDate }),
+  ),
+  latestRedteam: redteamRunSchema.nullable(),
+  /** One point per day for the last 14 days, oldest first. */
+  costTrend: z.array(
+    z.object({
+      date: z.string(),
+      runsCostUsd: z.number(),
+      tracesCostUsd: z.number(),
+      p95LatencyMs: z.number().int().nullable(),
+    }),
+  ),
+  recentRuns: z.array(runListItemSchema),
+});
+export type DashboardResponse = z.infer<typeof dashboardSchema>;

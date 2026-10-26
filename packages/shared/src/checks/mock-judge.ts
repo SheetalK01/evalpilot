@@ -70,6 +70,24 @@ export function criteriaKeywords(criteria: string): string[] {
   return [...new Set(words.filter((word) => word.length >= 3 && !STOP_WORDS.has(word)))];
 }
 
+const SUFFIXES: readonly [string, string][] = [
+  ['ies', 'y'],
+  ['ing', ''],
+  ['es', ''],
+  ['ed', ''],
+  ['ly', ''],
+  ['s', ''],
+];
+
+/** Crude stemmer so "apologises" matches "apologise" and "offers" matches "offer". */
+export function stem(word: string): string {
+  for (const [suffix, replacement] of SUFFIXES) {
+    if (word.endsWith(suffix) && word.length - suffix.length >= 4)
+      return word.slice(0, -suffix.length) + replacement;
+  }
+  return word;
+}
+
 export function mockJudge(criteria: string, output: string): JudgeVerdict {
   const keywords = criteriaKeywords(criteria);
   if (keywords.length === 0) {
@@ -79,7 +97,7 @@ export function mockJudge(criteria: string, output: string): JudgeVerdict {
     };
   }
   const haystack = output.toLowerCase();
-  const found = keywords.filter((keyword) => haystack.includes(keyword));
+  const found = keywords.filter((keyword) => haystack.includes(keyword) || haystack.includes(stem(keyword)));
   const score = Math.max(1, Math.round(1 + (9 * found.length) / keywords.length));
   const missing = keywords.filter((keyword) => !found.includes(keyword));
   const reason =

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { criteriaKeywords, detectRefusal, mockJudge } from '../src';
+import { criteriaKeywords, detectRefusal, mockJudge, stem } from '../src';
 
 describe('detectRefusal', () => {
   it.each([
@@ -47,6 +47,27 @@ describe('mockJudge', () => {
     const verdict = mockJudge('refund shipping tracking', 'You can get a refund.');
     expect(verdict.score).toBe(4);
     expect(verdict.reason).toContain('missing: shipping, tracking');
+  });
+
+  it('matches simple word forms through stemming', () => {
+    expect(
+      mockJudge(
+        'Apologises and offers a replacement or refund',
+        'I apologise. I can offer a replacement or a refund.',
+      ).score,
+    ).toBe(10);
+  });
+
+  it.each([
+    ['apologises', 'apologis'],
+    ['offers', 'offer'],
+    ['replies', 'reply'],
+    ['shipping', 'shipp'],
+    ['delayed', 'delay'],
+    ['quickly', 'quick'],
+    ['bus', 'bus'],
+  ])('stems %s → %s', (word, expected) => {
+    expect(stem(word)).toBe(expected);
   });
 
   it('is deterministic', () => {

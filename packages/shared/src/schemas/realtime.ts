@@ -3,6 +3,7 @@ import type {
   RedteamRunResponse,
   RunResponse,
   TestResultResponse,
+  TraceListItemResponse,
 } from './responses';
 
 /** Socket.IO namespace and event names shared by the API gateway and the web client. */
@@ -67,7 +68,7 @@ export interface RedteamCompletedPayload {
 }
 
 export interface TraceCreatedPayload {
-  trace: unknown;
+  trace: TraceListItemResponse;
 }
 
 /** Which payload each event carries, so publishers and listeners agree at compile time. */
