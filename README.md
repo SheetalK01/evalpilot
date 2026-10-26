@@ -62,6 +62,26 @@ Choices made where the spec left room (simplest standard option):
   server config, not user input).
 - **Cancelling** a running run stops it before its next test case; cases already in flight
   (at most 4) finish and are kept.
+- **SDK** (`@evalpilot/sdk`) has no runtime dependencies (about 7 KB). Its `TraceInput` type is
+  declared in the SDK and checked against `@evalpilot/shared` at compile time, so it cannot drift
+  from the API. Each trace gets an `externalId`, so retried batches are never stored twice.
+- **CLI** exit codes: `0` passed, `1` below threshold, `2` error (bad usage, API error, run
+  `ERROR`/`CANCELLED`, timeout). Until the CLI is published, run it with
+  `npm run cli -- run --suite <id>` (after `npm run build`).
+- **ShopBot** (Fastify) is deliberately vulnerable in mock mode to 6 of the 26 attacks (risk
+  score 22, MEDIUM), so the red-team report has findings. `SHOPBOT_PROMPT_VERSION=v2` switches
+  to a "cheaper" prompt that drops the 30-day refund window and the 3–5 day shipping time: the
+  demo suite goes from 8/8 to 6/8 and the CI gate fails. ShopBot's tests check the seeded demo
+  suite and the attack library against its answers, so the demo can never silently break.
+- **Local SDK key:** if `EVALPILOT_API_KEY` is set, the seed registers it (hash only) on the demo
+  project, so ShopBot's traces show up without manual setup.
+- **CSRF check** is skipped on API-key routes (`/v1/*`): they never read cookies, and a missing
+  key should give a clear `401`, not `403 Missing Origin header`.
+- **Usage charts** are aggregated in memory from a project's traces in the selected range; at
+  scale this would move to SQL `GROUP BY` or a rollup table.
+- **Pact** 16.5 (17.x needs Node 22). The SDK and CLI are consumers now; the web app's contract is
+  added with the web app. Provider verification boots the compiled API on the test database and
+  sets up each provider state with Prisma.
 - **npm:** the lockfile is generated with npm 11 (npm 10.8 drops nested dependencies when
   `overrides` are used); `npm ci` / `npm install` work with npm 10 or 11. `npm run deps:check`
   verifies the installed tree.
