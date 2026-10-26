@@ -1,10 +1,30 @@
+import { Reflector } from '@nestjs/core';
+import { ApiKeyAuth } from '../decorators/auth.decorators';
 import { ForbiddenException } from '@nestjs/common';
 import type { AppConfig } from '@evalpilot/server-core';
 import { CsrfOriginGuard } from './csrf-origin.guard';
 
-const guard = new CsrfOriginGuard({ allowedOrigins: ['http://localhost:3000'] } as AppConfig);
-const contextFor = (method: string, headers: Record<string, string> = {}, type = 'http') =>
-  ({ getType: () => type, switchToHttp: () => ({ getRequest: () => ({ method, headers }) }) }) as never;
+const guard = new CsrfOriginGuard(
+  { allowedOrigins: ['http://localhost:3000'] } as AppConfig,
+  new Reflector(),
+);
+
+class MachineController {
+  @ApiKeyAuth()
+  ingest(): void {}
+}
+const contextFor = (
+  method: string,
+  headers: Record<string, string> = {},
+  type = 'http',
+  handler: () => void = () => undefined,
+) =>
+  ({
+    getType: () => type,
+    getHandler: () => handler,
+    getClass: () => Object,
+    switchToHttp: () => ({ getRequest: () => ({ method, headers }) }),
+  }) as never;
 
 describe('CsrfOriginGuard', () => {
   it.each(['GET', 'HEAD', 'OPTIONS'])('allows safe method %s without an Origin', (method) => {
@@ -13,6 +33,10 @@ describe('CsrfOriginGuard', () => {
 
   it('leaves WebSocket messages to the handshake origin check', () => {
     expect(guard.canActivate(contextFor('POST', {}, 'ws'))).toBe(true);
+  });
+
+  it('skips API-key routes, which ignore cookies (the API-key guard answers 401 instead)', () => {
+    expect(guard.canActivate(contextFor('POST', {}, 'http', MachineController.prototype.ingest))).toBe(true);
   });
 
   it('allows an allow-listed Origin', () => {

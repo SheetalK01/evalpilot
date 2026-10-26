@@ -10,11 +10,12 @@
   },
   "workspaces": [
     "packages/*",
-    "apps/*"
+    "apps/*",
+    "contracts"
   ],
   "scripts": {
-    "build": "npm run build:packages && npm run build -w @evalpilot/api -w @evalpilot/worker",
-    "build:packages": "npm run build -w @evalpilot/shared && npm run build -w @evalpilot/server-core",
+    "build": "npm run build:packages && npm run build -w @evalpilot/api -w @evalpilot/worker -w @evalpilot/shopbot",
+    "build:packages": "npm run build -w @evalpilot/shared && npm run build -w @evalpilot/server-core -w @evalpilot/sdk -w evalpilot",
     "typecheck": "npm run build:packages && npm run typecheck --workspaces --if-present && tsc -p tsconfig.json --noEmit",
     "lint": "eslint . --max-warnings 0",
     "lint:fix": "eslint . --fix",
@@ -33,7 +34,10 @@
     "test:int": "npm run build:packages && npm run test:int --workspaces --if-present",
     "deps:check": "npm ls --all > /dev/null",
     "dev:api": "npm run dev -w @evalpilot/api",
-    "dev:worker": "npm run dev -w @evalpilot/worker"
+    "dev:worker": "npm run dev -w @evalpilot/worker",
+    "dev:shopbot": "npm run dev -w @evalpilot/shopbot",
+    "cli": "node packages/cli/dist/index.js",
+    "test:contract": "npm run build && npm run test:pact -w @evalpilot/contracts"
   },
   "lint-staged": {
     "*.{ts,tsx,js,mjs,cjs}": [

@@ -18,6 +18,7 @@ import {
   type RunResponse,
   type RunTrigger,
   type TestResultResponse,
+  type V1RunResponse,
 } from '@evalpilot/shared';
 import {
   JobsService,
@@ -30,6 +31,7 @@ import {
   toTestResultResponse,
 } from '@evalpilot/server-core';
 import { NEWEST_FIRST, paginate } from '../common/pagination';
+import type { ApiKeyContext } from '../types/auth';
 
 const ACTIVE = ['QUEUED', 'RUNNING'] as const;
 
@@ -84,6 +86,36 @@ export class RunsService {
     return this.start({ id: suiteId, project: { ownerId } }, input.trigger ?? 'UI', input);
   }
 
+  /** CLI/CI entry point: the suite must belong to the API key's project. */
+  startForApiKey(apiKey: ApiKeyContext, suiteId: string, input: CreateRunInput): Promise<RunCreatedResponse> {
+    return this.start(
+      { id: suiteId, projectId: apiKey.projectId },
+      input.trigger === 'API' ? 'API' : 'CLI',
+      input,
+    );
+  }
+
+  async getForApiKey(apiKey: ApiKeyContext, runId: string): Promise<V1RunResponse> {
+    const run = await this.prisma.testRun.findFirst({
+      where: { id: runId, suite: { projectId: apiKey.projectId } },
+      include: RUN_INCLUDE,
+    });
+    if (!run) throw new NotFoundException('Run not found');
+    return { ...toRunResponse(run), results: await this.resultsOf(runId) };
+  }
+
+  /** Adds the compact status strip to each run (one query for all of them). */
+  async withStrips(runs: RunWithSuite[]): Promise<RunListItemResponse[]> {
+    const results = await this.prisma.testResult.findMany({
+      where: { runId: { in: runs.map((run) => run.id) } },
+      select: { runId: true, status: true, position: true },
+    });
+    return runs.map((run) => ({
+      ...toRunResponse(run),
+      strip: resultStrip(results.filter((result) => result.runId === run.id)),
+    }));
+  }
+
   async listForSuite(
     ownerId: string,
     suiteId: string,
@@ -102,17 +134,7 @@ export class RunsService {
         ...args,
       }),
     );
-    const results = await this.prisma.testResult.findMany({
-      where: { runId: { in: page.items.map((run) => run.id) } },
-      select: { runId: true, status: true, position: true },
-    });
-    return {
-      items: page.items.map((run) => ({
-        ...toRunResponse(run),
-        strip: resultStrip(results.filter((result) => result.runId === run.id)),
-      })),
-      nextCursor: page.nextCursor,
-    };
+    return { items: await this.withStrips(page.items), nextCursor: page.nextCursor };
   }
 
   async findOwned(ownerId: string, runId: string): Promise<RunWithSuite> {

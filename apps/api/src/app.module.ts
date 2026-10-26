@@ -14,6 +14,7 @@ import { LoggerModule } from 'nestjs-pino';
 import { ZodValidationPipe } from 'nestjs-zod';
 import { ApiKeysModule } from './api-keys/api-keys.module';
 import { AuthModule } from './auth/auth.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { CsrfOriginGuard } from './common/guards/csrf-origin.guard';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -27,6 +28,7 @@ import { RunsModule } from './runs/runs.module';
 import { SuitesModule } from './suites/suites.module';
 import { TargetsModule } from './targets/targets.module';
 import { TestCasesModule } from './test-cases/test-cases.module';
+import { TracesModule } from './traces/traces.module';
 
 @Module({
   imports: [
@@ -55,6 +57,8 @@ import { TestCasesModule } from './test-cases/test-cases.module';
     RunsModule,
     RedteamModule,
     RealtimeModule,
+    TracesModule,
+    DashboardModule,
   ],
   providers: [
     { provide: APP_FILTER, useClass: AllExceptionsFilter },
