@@ -313,7 +313,11 @@ const answer = await ep.trace('shopbot.chat', { input, model }, async () => call
 EvalPilot must have its **own visual identity**. It must NOT look like the owner's other projects
 (TestPilot AI, her portfolio) or like a default shadcn/Tailwind dashboard. The idea: **an aircraft
 cockpit / flight recorder for AI.** Every screen should feel like a precise instrument panel:
-calm, dense, technical and premium (think Teenage Engineering, Linear and an avionics display).
+calm, technical and premium (think Teenage Engineering, Linear and an avionics display).
+
+**Eye-catching but simple:** striking at first glance, yet easy to use. One clear primary action
+per screen, generous spacing, short labels, no clutter, no decoration without meaning. A new user
+must understand any screen within five seconds.
 
 **Banned (do not use):** indigo/violet/pink gradients, glassmorphism and blur cards, blob or mesh
 gradient backgrounds, big soft drop shadows, rounded-2xl "bubbly" cards, Inter as the only font,
