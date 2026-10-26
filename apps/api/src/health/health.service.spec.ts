@@ -1,5 +1,5 @@
 import type { Redis } from 'ioredis';
-import type { PrismaService } from '../prisma/prisma.service';
+import type { AppConfig, PrismaService } from '@evalpilot/server-core';
 import { HealthService } from './health.service';
 
 function service({
@@ -13,7 +13,7 @@ function service({
 }) {
   const prisma = { $queryRaw: jest.fn(db) } as unknown as PrismaService;
   const redis = { ping: jest.fn(ping), exists: jest.fn(heartbeat) } as unknown as Redis;
-  return new HealthService(prisma, redis);
+  return new HealthService(prisma, redis, { redisPrefix: 'evalpilot-test' } as AppConfig);
 }
 
 describe('HealthService', () => {

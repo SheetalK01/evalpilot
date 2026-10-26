@@ -1,6 +1,6 @@
 import { SESSION_COOKIE } from '@evalpilot/shared';
 import type { CookieOptions, Response } from 'express';
-import type { AppConfig } from '../config/env';
+import type { AppConfig } from '@evalpilot/server-core';
 
 export function sessionCookieOptions(config: AppConfig): CookieOptions {
   return {

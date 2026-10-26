@@ -8,7 +8,7 @@ import type {
   UpdateProjectInput,
 } from '@evalpilot/shared';
 import { NEWEST_FIRST, paginate } from '../common/pagination';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '@evalpilot/server-core';
 
 const withCounts = { _count: { select: { suites: true, targets: true } } } as const;
 type ProjectWithCounts = Project & { _count: { suites: number; targets: number } };

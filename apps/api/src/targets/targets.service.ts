@@ -1,15 +1,20 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import type { Target } from '@prisma/client';
 import {
   type CreateTargetInput,
+  type PingResultResponse,
   httpTargetSchema,
   maskHeaders,
   type TargetResponse,
   type UpdateTargetInput,
 } from '@evalpilot/shared';
 import { ZodValidationException } from 'nestjs-zod';
-import { SecretBoxService } from '../common/crypto/secret-box';
-import { PrismaService } from '../prisma/prisma.service';
+import { JobsService, PrismaService, SecretBoxService, WorkerUnavailableError } from '@evalpilot/server-core';
 import { ProjectsService } from '../projects/projects.service';
 import { mergeMaskedHeaders } from './target-headers';
 
@@ -21,6 +26,7 @@ export class TargetsService {
     private readonly prisma: PrismaService,
     private readonly projects: ProjectsService,
     private readonly secrets: SecretBoxService,
+    private readonly jobs: JobsService,
   ) {}
 
   toResponse(target: Target): TargetResponse {
@@ -130,6 +136,17 @@ export class TargetsService {
       },
     });
     return this.toResponse(updated);
+  }
+
+  /** One test call, made by the worker (the API never calls targets itself). */
+  async ping(ownerId: string, id: string): Promise<PingResultResponse> {
+    const target = await this.findOwned(ownerId, id);
+    try {
+      return await this.jobs.pingTarget(target.id, target.timeoutMs + 5000);
+    } catch (error) {
+      if (error instanceof WorkerUnavailableError) throw new ServiceUnavailableException(error.message);
+      throw error;
+    }
   }
 
   /** Suites that used this target keep their history and are unlinked (target_id = NULL). */

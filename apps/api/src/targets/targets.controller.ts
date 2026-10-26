@@ -5,14 +5,24 @@ import {
   ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
+  ApiOperation,
+  ApiServiceUnavailableResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { type CreateTargetInput, createTargetSchema, type TargetResponse } from '@evalpilot/shared';
-import { ZodValidationPipe } from 'nestjs-zod';
+import {
+  type CreateTargetInput,
+  createTargetSchema,
+  pingResultSchema,
+  type PingResultResponse,
+  type TargetResponse,
+} from '@evalpilot/shared';
+import { createZodDto, ZodValidationPipe } from 'nestjs-zod';
 import { CurrentUser, SessionAuth } from '../common/decorators/auth.decorators';
 import type { AuthUser } from '../types/auth';
 import { createTargetBody, TargetDto, UpdateTargetDto } from './targets.dto';
 import { TargetsService } from './targets.service';
+
+class PingResultDto extends createZodDto(pingResultSchema) {}
 
 @ApiTags('Targets')
 @SessionAuth()
@@ -52,6 +62,15 @@ export class TargetsController {
     @Body() dto: UpdateTargetDto,
   ): Promise<TargetResponse> {
     return this.targets.update(user.id, id, dto);
+  }
+
+  @Post('targets/:id/ping')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Send one test message to the target (made by the worker) and report the result' })
+  @ApiOkResponse({ type: PingResultDto })
+  @ApiServiceUnavailableResponse({ description: 'The worker is not running' })
+  ping(@CurrentUser() user: AuthUser, @Param('id') id: string): Promise<PingResultResponse> {
+    return this.targets.ping(user.id, id);
   }
 
   @Delete('targets/:id')

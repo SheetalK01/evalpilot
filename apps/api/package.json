@@ -5,8 +5,8 @@
   "description": "EvalPilot REST + Socket.IO API (NestJS)",
   "license": "UNLICENSED",
   "scripts": {
-    "build": "nest build",
-    "dev": "nest start --watch",
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsc-watch -p tsconfig.build.json --onSuccess \"node dist/main.js\"",
     "start": "node dist/main.js",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "jest --selectProjects unit",
@@ -15,7 +15,6 @@
     "test:coverage": "jest --coverage"
   },
   "devDependencies": {
-    "@nestjs/cli": "11.0.24",
     "@nestjs/testing": "11.2.8",
     "@types/cookie-parser": "1.4.10",
     "@types/express": "5.0.6",
@@ -26,18 +25,23 @@
     "@types/supertest": "6.0.3",
     "jest": "30.5.2",
     "pino-pretty": "13.2.0",
+    "socket.io-client": "4.8.4",
     "supertest": "7.3.1",
-    "ts-jest": "29.4.15"
+    "ts-jest": "29.4.15",
+    "tsc-watch": "7.2.1"
   },
   "dependencies": {
+    "@evalpilot/server-core": "0.1.0",
     "@evalpilot/shared": "0.1.0",
     "@nestjs/common": "11.2.8",
     "@nestjs/core": "11.2.8",
     "@nestjs/jwt": "11.0.2",
     "@nestjs/passport": "11.0.5",
     "@nestjs/platform-express": "11.2.8",
+    "@nestjs/platform-socket.io": "11.2.8",
     "@nestjs/swagger": "11.4.7",
     "@nestjs/throttler": "6.7.1",
+    "@nestjs/websockets": "11.2.8",
     "@prisma/client": "6.19.3",
     "bcryptjs": "3.0.3",
     "cookie-parser": "1.4.7",

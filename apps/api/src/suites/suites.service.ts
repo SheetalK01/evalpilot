@@ -12,7 +12,7 @@ import {
   type UpdateSuiteInput,
 } from '@evalpilot/shared';
 import { NEWEST_FIRST, paginate } from '../common/pagination';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '@evalpilot/server-core';
 import { ProjectsService } from '../projects/projects.service';
 import { parseStoredChecks, parseStoredTags } from '../test-cases/test-case.mapper';
 

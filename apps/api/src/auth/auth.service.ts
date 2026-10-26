@@ -3,7 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { Prisma, type User } from '@prisma/client';
 import type { RegisterInput } from '@evalpilot/shared';
 import bcrypt from 'bcryptjs';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '@evalpilot/server-core';
 import { UsersService } from '../users/users.service';
 
 export const BCRYPT_ROUNDS = 12;

@@ -1,6 +1,15 @@
 import { Module } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD, APP_PIPE } from '@nestjs/core';
 import { ThrottlerModule } from '@nestjs/throttler';
+import {
+  APP_CONFIG,
+  type AppConfig,
+  ConfigModule,
+  PrismaModule,
+  QueuesModule,
+  RealtimePublisherModule,
+  RedisModule,
+} from '@evalpilot/server-core';
 import { LoggerModule } from 'nestjs-pino';
 import { ZodValidationPipe } from 'nestjs-zod';
 import { ApiKeysModule } from './api-keys/api-keys.module';
@@ -10,18 +19,18 @@ import { CsrfOriginGuard } from './common/guards/csrf-origin.guard';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { AppThrottlerGuard, throttlerOptions } from './common/guards/throttler';
 import { pinoOptions } from './common/logger';
-import { ConfigModule } from './config/config.module';
-import { APP_CONFIG, type AppConfig } from './config/env';
 import { HealthModule } from './health/health.module';
-import { PrismaModule } from './prisma/prisma.module';
 import { ProjectsModule } from './projects/projects.module';
-import { RedisModule } from './redis/redis.module';
+import { RealtimeModule } from './realtime/realtime.module';
+import { RedteamModule } from './redteam/redteam.module';
+import { RunsModule } from './runs/runs.module';
 import { SuitesModule } from './suites/suites.module';
 import { TargetsModule } from './targets/targets.module';
 import { TestCasesModule } from './test-cases/test-cases.module';
 
 @Module({
   imports: [
+    // Infrastructure (shared with the worker through @evalpilot/server-core)
     ConfigModule,
     LoggerModule.forRootAsync({
       inject: [APP_CONFIG],
@@ -33,6 +42,9 @@ import { TestCasesModule } from './test-cases/test-cases.module';
     }),
     PrismaModule,
     RedisModule,
+    QueuesModule,
+    RealtimePublisherModule,
+    // Features
     HealthModule,
     AuthModule,
     ProjectsModule,
@@ -40,6 +52,9 @@ import { TestCasesModule } from './test-cases/test-cases.module';
     TargetsModule,
     SuitesModule,
     TestCasesModule,
+    RunsModule,
+    RedteamModule,
+    RealtimeModule,
   ],
   providers: [
     { provide: APP_FILTER, useClass: AllExceptionsFilter },

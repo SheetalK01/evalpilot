@@ -11,6 +11,8 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
   }
 
   override canActivate(context: ExecutionContext) {
+    // WebSocket clients authenticate once, at the handshake (RealtimeGateway).
+    if (context.getType() !== 'http') return true;
     const targets = [context.getHandler(), context.getClass()];
     if (this.reflector.getAllAndOverride<boolean>(IS_PUBLIC, targets)) return true;
     if (this.reflector.getAllAndOverride<boolean>(IS_API_KEY_ROUTE, targets)) return true;

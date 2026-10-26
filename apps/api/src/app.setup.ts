@@ -6,7 +6,8 @@ import express, { type NextFunction, type Request, type Response } from 'express
 import helmet from 'helmet';
 import { Logger } from 'nestjs-pino';
 import { cleanupOpenApiDoc } from 'nestjs-zod';
-import type { AppConfig } from './config/env';
+import type { AppConfig } from '@evalpilot/server-core';
+import { RealtimeIoAdapter } from './realtime/realtime.adapter';
 
 export const DOCS_PATH = 'api/docs';
 
@@ -49,6 +50,7 @@ export function configureApp(app: INestApplication, config: AppConfig): INestApp
     credentials: true,
     exposedHeaders: ['x-request-id', 'content-disposition'],
   });
+  app.useWebSocketAdapter(new RealtimeIoAdapter(app, config));
   app.enableShutdownHooks();
   setupSwagger(app, config);
   return app;

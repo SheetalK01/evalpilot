@@ -15,6 +15,8 @@ describe('loadConfig', () => {
       port: 4000,
       aiMode: 'mock',
       allowPrivateTargets: false,
+      redisPrefix: 'evalpilot',
+      anthropic: { apiKey: null, model: 'claude-opus-5-5', judgeEffort: 'medium' },
       github: null,
       rateLimits: { default: 300, auth: 10, v1: 1200 },
     });
@@ -57,6 +59,13 @@ describe('loadConfig', () => {
     const config = loadConfig({ ...base, NODE_ENV: 'production', ALLOW_PRIVATE_TARGETS: 'true' });
     expect(config.isProduction).toBe(true);
     expect(config.allowPrivateTargets).toBe(true);
+  });
+
+  it('requires an Anthropic key in live mode', () => {
+    expect(() => loadConfig({ ...base, AI_MODE: 'live' })).toThrow('AI_MODE=live needs ANTHROPIC_API_KEY');
+    expect(loadConfig({ ...base, AI_MODE: 'live', ANTHROPIC_API_KEY: 'sk-ant-test' }).anthropic.apiKey).toBe(
+      'sk-ant-test',
+    );
   });
 
   it('lists every problem in one readable error', () => {

@@ -7,7 +7,7 @@ import {
   type TestCaseResponse,
   type UpdateTestCaseInput,
 } from '@evalpilot/shared';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '@evalpilot/server-core';
 import { SuitesService } from '../suites/suites.service';
 import { toTestCaseResponse } from './test-case.mapper';
 

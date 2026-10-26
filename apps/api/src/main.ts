@@ -2,8 +2,7 @@ import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { configureApp } from './app.setup';
-import { APP_CONFIG, type AppConfig } from './config/env';
-import { loadRootEnv } from './config/load-env';
+import { APP_CONFIG, type AppConfig, loadRootEnv } from '@evalpilot/server-core';
 
 async function bootstrap(): Promise<void> {
   // Config is read when Nest builds the providers, so loading .env here (before create) is enough.

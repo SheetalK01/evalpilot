@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
-import { APP_CONFIG, type AppConfig } from '../config/env';
+import { APP_CONFIG, type AppConfig } from '@evalpilot/server-core';
 import { UsersModule } from '../users/users.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
@@ -34,6 +34,6 @@ import { LocalStrategy } from './strategies/local.strategy';
         config.github ? new GithubStrategy(config.github, auth) : null,
     },
   ],
-  exports: [AuthService],
+  exports: [AuthService, JwtModule],
 })
 export class AuthModule {}

@@ -3,8 +3,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { loginSchema } from '@evalpilot/shared';
 import type { Request } from 'express';
 import { ZodValidationException } from 'nestjs-zod';
-import { InjectConfig } from '../config/config.module';
-import type { AppConfig } from '../config/env';
+import { InjectConfig, type AppConfig } from '@evalpilot/server-core';
 
 /** Validates the login body (400 on bad input) before Passport checks the credentials (401). */
 @Injectable()

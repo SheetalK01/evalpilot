@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { type ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ThrottlerGuard, type ThrottlerModuleOptions } from '@nestjs/throttler';
-import type { AppConfig } from '../../config/env';
+import type { AppConfig } from '@evalpilot/server-core';
 import { RATE_LIMIT_BUCKET, type RateLimitBucket } from '../decorators/rate-limit.decorator';
 
 const reflector = new Reflector();
@@ -55,6 +55,11 @@ export function trackerFor(req: TrackedRequest): string {
 
 @Injectable()
 export class AppThrottlerGuard extends ThrottlerGuard {
+  /** Only HTTP is rate-limited; WebSocket traffic is bounded by room authorisation. */
+  override canActivate(context: ExecutionContext): Promise<boolean> {
+    return context.getType() === 'http' ? super.canActivate(context) : Promise.resolve(true);
+  }
+
   protected override getTracker(req: Record<string, unknown>): Promise<string> {
     return Promise.resolve(trackerFor(req as unknown as TrackedRequest));
   }

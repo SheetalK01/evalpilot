@@ -1,7 +1,6 @@
 import { type CanActivate, type ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common';
 import type { Request } from 'express';
-import { InjectConfig } from '../../config/config.module';
-import type { AppConfig } from '../../config/env';
+import { InjectConfig, type AppConfig } from '@evalpilot/server-core';
 import { bearerToken } from './api-key.guard';
 
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
@@ -28,6 +27,8 @@ export class CsrfOriginGuard implements CanActivate {
   constructor(@InjectConfig() private readonly config: AppConfig) {}
 
   canActivate(context: ExecutionContext): boolean {
+    // WebSockets are protected by the origin check at the handshake (RealtimeIoAdapter).
+    if (context.getType() !== 'http') return true;
     const req = context.switchToHttp().getRequest<Request>();
     if (SAFE_METHODS.has(req.method) || bearerToken(req)) return true;
     const origin = requestOrigin(req);

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy, type Profile } from 'passport-github2';
-import type { AppConfig } from '../../config/env';
+import type { AppConfig } from '@evalpilot/server-core';
 import type { AuthUser } from '../../types/auth';
 import { AuthService } from '../auth.service';
 

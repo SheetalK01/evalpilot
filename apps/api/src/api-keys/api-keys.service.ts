@@ -7,7 +7,7 @@ import {
   type CreatedApiKeyResponse,
   isApiKeyFormat,
 } from '@evalpilot/shared';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '@evalpilot/server-core';
 import { ProjectsService } from '../projects/projects.service';
 import type { ApiKeyContext } from '../types/auth';
 import { generateApiKey, hashApiKey } from './api-key.util';

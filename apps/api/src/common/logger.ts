@@ -1,5 +1,5 @@
 import type { Params } from 'nestjs-pino';
-import type { AppConfig } from '../config/env';
+import type { AppConfig } from '@evalpilot/server-core';
 import { resolveRequestId } from './request-id';
 
 /** Structured JSON logs with the request id on every line. Secrets are redacted. */

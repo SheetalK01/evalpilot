@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type { User } from '@prisma/client';
 import type { PublicUserResponse } from '@evalpilot/shared';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '@evalpilot/server-core';
 
 export function toPublicUser(user: User): PublicUserResponse {
   return {

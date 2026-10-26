@@ -13,8 +13,8 @@
     "apps/*"
   ],
   "scripts": {
-    "build": "npm run build --workspaces --if-present",
-    "build:packages": "npm run build -w @evalpilot/shared",
+    "build": "npm run build:packages && npm run build -w @evalpilot/api -w @evalpilot/worker",
+    "build:packages": "npm run build -w @evalpilot/shared && npm run build -w @evalpilot/server-core",
     "typecheck": "npm run build:packages && npm run typecheck --workspaces --if-present && tsc -p tsconfig.json --noEmit",
     "lint": "eslint . --max-warnings 0",
     "lint:fix": "eslint . --fix",
@@ -31,7 +31,9 @@
     "postinstall": "prisma generate",
     "prepare": "husky",
     "test:int": "npm run build:packages && npm run test:int --workspaces --if-present",
-    "deps:check": "npm ls --all > /dev/null"
+    "deps:check": "npm ls --all > /dev/null",
+    "dev:api": "npm run dev -w @evalpilot/api",
+    "dev:worker": "npm run dev -w @evalpilot/worker"
   },
   "lint-staged": {
     "*.{ts,tsx,js,mjs,cjs}": [
@@ -67,6 +69,9 @@
     },
     "@nestjs/swagger": {
       "js-yaml": "5.5.0"
+    },
+    "c12": {
+      "magicast": "0.5.5"
     }
   }
 }

@@ -1,4 +1,4 @@
-import type { AppConfig } from '../../config/env';
+import type { AppConfig } from '@evalpilot/server-core';
 import { RateLimit } from '../decorators/rate-limit.decorator';
 import { throttlerOptions, trackerFor } from './throttler';
 

@@ -1,8 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { type HealthResponse, WORKER_HEARTBEAT_KEY } from '@evalpilot/shared';
+import type { HealthResponse } from '@evalpilot/shared';
 import type { Redis } from 'ioredis';
-import { PrismaService } from '../prisma/prisma.service';
-import { InjectRedis } from '../redis/redis.module';
+import { type AppConfig, InjectConfig, InjectRedis, PrismaService, redisKeys } from '@evalpilot/server-core';
 
 type State = 'up' | 'down';
 const CHECK_TIMEOUT_MS = 1500;
@@ -28,10 +27,15 @@ async function probe(check: () => Promise<boolean>): Promise<State> {
 
 @Injectable()
 export class HealthService {
+  private readonly heartbeatKey: string;
+
   constructor(
     private readonly prisma: PrismaService,
     @InjectRedis() private readonly redis: Redis,
-  ) {}
+    @InjectConfig() config: AppConfig,
+  ) {
+    this.heartbeatKey = redisKeys(config.redisPrefix).workerHeartbeat;
+  }
 
   async check(): Promise<HealthResponse> {
     const [db, redis, worker] = await Promise.all([
@@ -40,7 +44,7 @@ export class HealthService {
         await this.redis.ping();
         return true;
       }),
-      probe(async () => (await this.redis.exists(WORKER_HEARTBEAT_KEY)) === 1),
+      probe(async () => (await this.redis.exists(this.heartbeatKey)) === 1),
     ]);
     return {
       // The API can serve requests without the worker; runs just stay queued.

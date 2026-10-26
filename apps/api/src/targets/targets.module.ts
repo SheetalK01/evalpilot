@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { SecretBoxService } from '../common/crypto/secret-box';
+import { SecretBoxService } from '@evalpilot/server-core';
 import { TargetsController } from './targets.controller';
 import { TargetsService } from './targets.service';
 

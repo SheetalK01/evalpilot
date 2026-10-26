@@ -1,6 +1,6 @@
 import type { JwtService } from '@nestjs/jwt';
 import type { User } from '@prisma/client';
-import type { PrismaService } from '../prisma/prisma.service';
+import type { PrismaService } from '@evalpilot/server-core';
 import type { UsersService } from '../users/users.service';
 import { AuthService } from './auth.service';
 
