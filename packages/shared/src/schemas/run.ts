@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { RUN_TRIGGERS } from '../enums';
+import { ATTACK_CATEGORIES, RUN_TRIGGERS } from '../enums';
 
 export const commitShaSchema = z
   .string()
@@ -12,3 +12,9 @@ export const createRunSchema = z.object({
   commitSha: commitShaSchema.optional(),
 });
 export type CreateRunInput = z.infer<typeof createRunSchema>;
+
+export const startRedteamSchema = z.object({
+  /** Only run attacks from these categories; all categories when omitted. */
+  categories: z.array(z.enum(ATTACK_CATEGORIES)).min(1).optional(),
+});
+export type StartRedteamInput = z.infer<typeof startRedteamSchema>;

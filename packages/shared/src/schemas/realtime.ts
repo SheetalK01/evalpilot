@@ -1,3 +1,10 @@
+import type {
+  RedteamFindingResponse,
+  RedteamRunResponse,
+  RunResponse,
+  TestResultResponse,
+} from './responses';
+
 /** Socket.IO namespace and event names shared by the API gateway and the web client. */
 export const REALTIME_NAMESPACE = '/realtime';
 
@@ -29,9 +36,6 @@ export function parseRoomName(room: string): { kind: RoomKind; id: string } | nu
   return { kind: match[1] as RoomKind, id: match[2] };
 }
 
-/** Redis pub/sub channel the worker publishes on and the API subscribes to. */
-export const REALTIME_REDIS_CHANNEL = 'evalpilot:realtime';
-
 export interface RealtimeEnvelope<T = unknown> {
   room: string;
   event: RealtimeEvent;
@@ -43,3 +47,38 @@ export interface RunProgressPayload {
   done: number;
   total: number;
 }
+
+export interface ResultCreatedPayload {
+  result: TestResultResponse;
+}
+
+export interface RunCompletedPayload {
+  run: RunResponse;
+}
+
+export interface RedteamFindingPayload {
+  finding: RedteamFindingResponse;
+  done: number;
+  total: number;
+}
+
+export interface RedteamCompletedPayload {
+  run: RedteamRunResponse;
+}
+
+export interface TraceCreatedPayload {
+  trace: unknown;
+}
+
+/** Which payload each event carries, so publishers and listeners agree at compile time. */
+export interface RealtimePayloads {
+  'run.progress': RunProgressPayload;
+  'result.created': ResultCreatedPayload;
+  'run.completed': RunCompletedPayload;
+  'redteam.finding': RedteamFindingPayload;
+  'redteam.completed': RedteamCompletedPayload;
+  'trace.created': TraceCreatedPayload;
+}
+
+/** Acknowledgement for `room.join`. */
+export type JoinAck = { ok: true } | { ok: false; error: string };

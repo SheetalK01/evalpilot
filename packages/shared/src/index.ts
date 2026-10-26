@@ -26,6 +26,7 @@ export * from './redteam/attack-library';
 export * from './utils/template';
 export * from './utils/json-path';
 export * from './utils/cost';
+export * from './utils/usage';
 export * from './utils/stats';
 export * from './utils/run-diff';
 export * from './utils/ssrf';
