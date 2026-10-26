@@ -37,16 +37,30 @@ export default tseslint.config(
       '@typescript-eslint/restrict-template-expressions': ['error', { allowNumber: true }],
       eqeqeq: ['error', 'always'],
       'no-console': ['error', { allow: ['warn', 'error'] }],
+      // NestJS modules are empty classes carrying a decorator.
+      '@typescript-eslint/no-extraneous-class': ['error', { allowWithDecorator: true }],
     },
   },
   {
-    files: ['**/*.mjs', '**/*.cjs'],
+    files: ['**/*.mjs', '**/*.cjs', '**/*.js'],
     ...tseslint.configs.disableTypeChecked,
+  },
+  {
+    files: ['**/*.js', '**/*.cjs'],
+    languageOptions: { sourceType: 'commonjs' },
   },
   {
     files: ['**/test/**/*.ts', '**/*.spec.ts', '**/*.test.ts'],
     rules: {
+      // Test doubles and supertest's `res.body` (typed any by the library) are fine in tests.
       '@typescript-eslint/no-non-null-assertion': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unsafe-argument': 'off',
+      '@typescript-eslint/no-unsafe-return': 'off',
+      '@typescript-eslint/no-empty-function': 'off',
+      '@typescript-eslint/unbound-method': 'off',
     },
   },
   {

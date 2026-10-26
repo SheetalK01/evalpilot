@@ -20,8 +20,8 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "npm run test --workspaces --if-present",
-    "test:coverage": "npm run test:coverage --workspaces --if-present",
+    "test": "npm run build:packages && npm run test --workspaces --if-present",
+    "test:coverage": "npm run build:packages && npm run test:coverage --workspaces --if-present",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
@@ -29,7 +29,9 @@
     "db:reset:test": "bash scripts/reset-test-db.sh",
     "db:studio": "prisma studio",
     "postinstall": "prisma generate",
-    "prepare": "husky"
+    "prepare": "husky",
+    "test:int": "npm run build:packages && npm run test:int --workspaces --if-present",
+    "deps:check": "npm ls --all > /dev/null"
   },
   "lint-staged": {
     "*.{ts,tsx,js,mjs,cjs}": [
@@ -59,6 +61,12 @@
   },
   "overrides": {
     "deepmerge-ts": "8.0.2",
-    "esbuild": "0.28.2"
+    "esbuild": "0.28.2",
+    "@nestjs/platform-express": {
+      "multer": "2.5.0"
+    },
+    "@nestjs/swagger": {
+      "js-yaml": "5.5.0"
+    }
   }
 }
