@@ -44,6 +44,24 @@ Choices made where the spec left room (simplest standard option):
   a suite holds at most 500 cases.
 - **`POST /targets/:id/ping`** is built with the worker in phase 3, so the API itself never calls
   a target (spec section 5).
+- **`packages/server-core`** (not in the spec's layout) holds the NestJS modules the API and the
+  worker share: config, Prisma, Redis, queues, the realtime publisher and the response mappers.
+  This is how "the worker shares the domain modules" (spec section 3) is done without one app
+  importing another's source.
+- **Queues:** BullMQ 5 (stable; BullMQ 6 is a new major with pluggable backends). Every Redis key,
+  queue and channel lives under `REDIS_PREFIX` (default `evalpilot`); each test file uses a random
+  prefix, so tests never collide with each other or with a running dev worker.
+- **Live judge:** `claude-opus-5-5` through `client.beta.messages.parse` with a zod schema
+  (structured JSON output), `effort` from `JUDGE_EFFORT` (default `medium`), and server-side refusal
+  fallbacks (`fallbacks: "default"`) on models that support them. Answers are fenced in tags and
+  the judge is told to treat them as data (prompt-injection resistant). In live mode, `refusal`
+  checks are decided by the judge; in mock mode by a heuristic.
+- **SSRF guard** works at connect time: a custom DNS lookup rejects any private address the host
+  resolves to (so DNS rebinding does not help), literal private IPs are rejected before the call,
+  and redirects are refused for user-defined targets. The built-in ShopBot is exempt (its URL is
+  server config, not user input).
+- **Cancelling** a running run stops it before its next test case; cases already in flight
+  (at most 4) finish and are kept.
 - **npm:** the lockfile is generated with npm 11 (npm 10.8 drops nested dependencies when
   `overrides` are used); `npm ci` / `npm install` work with npm 10 or 11. `npm run deps:check`
   verifies the installed tree.
