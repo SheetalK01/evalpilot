@@ -1,0 +1,18 @@
+{
+  "name": "@evalpilot/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Pact consumer-driven contract tests (SDK, CLI \u2192 API) and provider verification",
+  "license": "UNLICENSED",
+  "scripts": {
+    "test:consumer": "node -e \"require('fs').rmSync('pacts',{recursive:true,force:true})\" && vitest run consumer",
+    "test:provider": "vitest run provider",
+    "test:pact": "npm run test:consumer && npm run test:provider",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@pact-foundation/pact": "16.5.0",
+    "dotenv": "17.4.2",
+    "vitest": "4.1.12"
+  }
+}
