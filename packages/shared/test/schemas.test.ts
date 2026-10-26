@@ -119,7 +119,8 @@ describe('target schemas', () => {
   });
 
   it('masks header values', () => {
-    expect(maskHeaderValue('abc')).toBe('••••');
+    expect(maskHeaderValue('abc')).toBe('••••••••');
+    expect(maskHeaderValue('support-123')).toBe('••••••••');
     expect(maskHeaderValue('Bearer sk-1234567890')).toBe('••••••••7890');
     expect(maskHeaders({ Authorization: 'Bearer secret-token' })).toEqual({ Authorization: '••••••••oken' });
   });

@@ -76,10 +76,13 @@ export const updateTargetSchema = z.object({
 });
 export type UpdateTargetInput = z.infer<typeof updateTargetSchema>;
 
+/** Values shorter than this are fully masked: showing 4 characters of a short secret reveals too much. */
+const MASK_REVEAL_MIN_LENGTH = 12;
+
 /** Header values are never returned in full; this replaces them in API responses. */
 export function maskHeaderValue(value: string): string {
-  if (value.length <= 4) return '••••';
-  return `${'•'.repeat(Math.min(8, value.length - 4))}${value.slice(-4)}`;
+  const dots = '•'.repeat(8);
+  return value.length < MASK_REVEAL_MIN_LENGTH ? dots : `${dots}${value.slice(-4)}`;
 }
 
 export function maskHeaders(headers: Record<string, string>): Record<string, string> {
