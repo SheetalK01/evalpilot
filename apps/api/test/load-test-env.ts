@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { config } from 'dotenv';
@@ -19,6 +20,9 @@ export function loadTestEnv(): void {
     DATABASE_URL: testUrl,
     NODE_ENV: 'test',
     LOG_LEVEL: 'silent',
+    // A fresh namespace per test file: queues, channels and heartbeats never collide with
+    // other files running in parallel, or with a dev worker running on the same Redis.
+    REDIS_PREFIX: `evalpilot-test-${randomBytes(4).toString('hex')}`,
     AI_MODE: 'mock',
     RATE_LIMIT_DEFAULT: '100000',
     RATE_LIMIT_AUTH: '5',

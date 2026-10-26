@@ -1,4 +1,12 @@
-import type { ProjectResponse, SuiteResponse, TargetResponse, TestCaseResponse } from '@evalpilot/shared';
+import type { Prisma } from '@prisma/client';
+import {
+  ATTACK_LIBRARY,
+  type ProjectResponse,
+  type SuiteResponse,
+  type TargetResponse,
+  type TestCaseResponse,
+} from '@evalpilot/shared';
+import type { PrismaService } from '@evalpilot/server-core';
 import type { ApiClient } from './api-client';
 
 export async function createProject(
@@ -65,4 +73,54 @@ export async function createCase(
     })
     .expect(201);
   return res.body as TestCaseResponse;
+}
+
+/** The seeded attack library (upserted, so parallel test files can share it). */
+export async function ensureAttacks(prisma: PrismaService): Promise<void> {
+  for (const attack of ATTACK_LIBRARY) {
+    const data = {
+      category: attack.category,
+      prompt: attack.prompt,
+      severity: attack.severity,
+      detectionJson: attack.detection as Prisma.InputJsonValue,
+    };
+    await prisma.attack.upsert({
+      where: { name: attack.name },
+      update: {},
+      create: { name: attack.name, ...data },
+    });
+  }
+}
+
+/** Stores a finished run with the given result statuses, as the worker would. */
+export async function seedFinishedRun(
+  prisma: PrismaService,
+  suiteId: string,
+  statuses: ('PASSED' | 'FAILED' | 'ERROR')[],
+  caseIds: string[],
+) {
+  const passed = statuses.filter((s) => s === 'PASSED').length;
+  return prisma.testRun.create({
+    data: {
+      suiteId,
+      status: passed / statuses.length >= 0.9 ? 'PASSED' : 'FAILED',
+      total: statuses.length,
+      passed,
+      failed: statuses.length - passed,
+      passRate: passed / statuses.length,
+      startedAt: new Date(),
+      finishedAt: new Date(),
+      results: {
+        create: statuses.map((status, position) => ({
+          testCaseId: caseIds[position] ?? null,
+          caseName: `Case ${position + 1}`,
+          position,
+          status,
+          output: `answer ${position + 1}`,
+          latencyMs: 100 + position,
+          checkResultsJson: [{ type: 'contains', passed: status === 'PASSED', message: 'demo' }],
+        })),
+      },
+    },
+  });
 }

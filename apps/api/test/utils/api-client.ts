@@ -44,6 +44,8 @@ export interface SignedUpUser {
   user: PublicUserResponse;
   email: string;
   password: string;
+  /** `ep_session=<jwt>`, for clients that are not supertest agents (e.g. Socket.IO). */
+  cookie: string;
 }
 
 /** Registers a brand-new user (unique email), so tests never share data and can run in parallel. */
@@ -51,5 +53,7 @@ export async function signUp(testApp: TestApp, name = 'QA Pilot'): Promise<Signe
   const client = new ApiClient(testApp);
   const email = uniqueEmail();
   const res = await client.post('/auth/register', { name, email, password: TEST_PASSWORD }).expect(201);
-  return { client, user: res.body as PublicUserResponse, email, password: TEST_PASSWORD };
+  const setCookie = (res.headers['set-cookie'] as unknown as string[] | undefined) ?? [];
+  const cookie = setCookie.find((value) => value.startsWith('ep_session='))?.split(';')[0] ?? '';
+  return { client, user: res.body as PublicUserResponse, email, password: TEST_PASSWORD, cookie };
 }
