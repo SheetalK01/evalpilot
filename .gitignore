@@ -1,0 +1,31 @@
+# dependencies
+node_modules/
+.pnp*
+
+# builds
+dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+
+# env / secrets
+.env
+.env.*
+!.env.example
+
+# tests & reports
+coverage/
+playwright-report/
+test-results/
+blob-report/
+e2e/.auth/
+pacts/
+perf/results/
+
+# logs / os / editors
+*.log
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
