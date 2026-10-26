@@ -20,7 +20,7 @@
 | Git identity | `Sheetal Khadanga <khadangasheetal@gmail.com>` (already set). **Commits and PRs must not contain "Co-Authored-By: Claude" or any AI attribution.** |
 | License | All rights reserved (see `LICENSE`). Do not change it. |
 
-**Goal:** a production-quality, eye-catching **full-stack SaaS** that shows strong **TypeScript
+**Goal:** a production-quality **full-stack SaaS** with a distinctive, top-notch UI (section 11) that shows strong **TypeScript
 full-stack** skills (Next.js, NestJS, real-time, queues, SDK) **and** strong **QA** skills (the
 product itself tests AI, and the codebase is thoroughly tested). Recruiters and interviewers for
 both Full Stack and QA/SDET roles will open this repo.
@@ -308,13 +308,78 @@ const answer = await ep.trace('shopbot.chat', { input, model }, async () => call
 
 ## 11. Frontend (Next.js)
 
-### Design system (eye-catching, consistent with the owner's portfolio)
-- Dark-first with a light mode toggle (remembered; respects system). Indigo → violet → pink accent
-  gradient used sparingly; Inter + JetBrains Mono; glassy cards, soft shadows, rounded-2xl.
-- shadcn/ui components, lucide icons, Recharts; skeleton loaders, toasts, empty states with
-  illustrations, subtle motion (respects `prefers-reduced-motion`).
-- Logo: a shield + check / pulse mark, "EvalPilot" wordmark.
-- WCAG 2.1 AA: labels, focus rings, keyboard navigation, contrast; responsive from 360px.
+### Design direction: "Flight Deck" (must look unlike a generic SaaS template)
+
+EvalPilot must have its **own visual identity**. It must NOT look like the owner's other projects
+(TestPilot AI, her portfolio) or like a default shadcn/Tailwind dashboard. The idea: **an aircraft
+cockpit / flight recorder for AI.** Every screen should feel like a precise instrument panel:
+calm, dense, technical and premium (think Teenage Engineering, Linear and an avionics display).
+
+**Banned (do not use):** indigo/violet/pink gradients, glassmorphism and blur cards, blob or mesh
+gradient backgrounds, big soft drop shadows, rounded-2xl "bubbly" cards, Inter as the only font,
+emoji icons, stock illustrations, generic "3 feature cards with icons" sections, unmodified
+shadcn default theme.
+
+**Colour tokens** (CSS variables, used everywhere; no hard-coded colours):
+| Token | Dark ("night flight", default) | Light ("paper chart") |
+|---|---|---|
+| `--bg` | `#0B0D0C` near-black graphite | `#F3F1EA` warm paper |
+| `--panel` | `#121614` | `#FBFAF6` |
+| `--line` (hairlines, 1px) | `#232A26` | `#D9D5C8` |
+| `--text` / `--muted` | `#E8ECE6` / `#7C877F` | `#151816` / `#6B6F66` |
+| `--signal` (brand accent) | `#D4FF3A` radar lime | `#4B6B00` deep olive |
+| `--pass` / `--fail` / `--warn` / `--info` | `#3DDC97` / `#FF5A36` / `#FFB020` / `#5AC8FA` | darker AA-contrast versions |
+
+Colour carries **meaning** only: lime = brand/primary action, green = pass, orange-red = fail,
+amber = warning/medium risk, cyan = running/live. Everything else is greyscale.
+
+**Typography:** display/headings **Space Grotesk** (tight tracking), UI text **IBM Plex Sans**,
+all numbers, ids, latencies, code and labels **IBM Plex Mono** with `tabular-nums`. Small
+uppercase mono labels (`LATENCY P95`, `PASS RATE`) above every value, like instrument readouts.
+
+**Signature elements (build all of them):**
+1. **Hairline grid layout:** panels separated by 1px lines, square corners (radius 4px max), small
+   crosshair `+` marks on panel corners, faint dotted grid on the page background.
+2. **Status bar (top, every app page):** cockpit-style strip showing `API ● DB ● REDIS ● WORKER`
+   health LEDs (from `/health`), UTC clock, current project, and `⌘K` hint.
+3. **Command palette (`⌘K`)** for navigation and actions (run suite, start red-team, create key,
+   switch theme); the whole app is usable from the keyboard (`g d` dashboard, `r` run, `?` shortcuts).
+4. **Run "flight strip":** on the live run page each test case is a thin vertical tick on a
+   horizontal timeline that lights up green/red as results stream in (with a scanning cyan cursor
+   while running), above the results table. The same strip, small, appears in run lists as a
+   sparkline-like history.
+5. **Altimeter numbers:** key numbers (pass rate, risk score) animate with a rolling digit counter.
+6. **Threat radar:** red-team report shows a polar/radar chart of the 6 attack categories with a
+   rotating sweep line while the run is live; findings are listed like an incident log
+   (`[CRITICAL] 14:02:11 PROMPT_INJECTION …`).
+7. **Trace "black box" feed:** live traces scroll like a flight recorder log in monospace rows with
+   latency bars; clicking one opens a split-pane inspector (input / output / metadata / timing
+   waterfall).
+8. **Run diff view:** two runs side by side with changed cases highlighted (`PASS → FAIL` in red,
+   `FAIL → PASS` in green), like a code diff.
+9. **Landing page hero:** not a gradient blob. A large live **instrument panel demo** that
+   auto-plays a real-looking run against ShopBot (flight strip filling up, readouts rolling, a
+   red-team finding appearing), with the headline in Space Grotesk on the left. Sections below use
+   asymmetric editorial layouts, a terminal block for the CLI, a code block for the SDK, and a
+   "before / after EvalPilot" comparison — no generic icon-card grids.
+10. **Logo:** a minimal mark combining an attitude-indicator horizon line and a check, in
+    `--signal`; mono wordmark `EVALPILOT`.
+
+**Motion:** fast and mechanical (120–200 ms, ease-out, no bounce); streaming rows slide in; LEDs
+pulse softly when live. All motion off under `prefers-reduced-motion`.
+
+**Components:** shadcn/ui is allowed only as the accessible base; **restyle every component** with
+the tokens above (square, hairline, mono labels). Icons: lucide at 1.5px stroke, used sparingly.
+Charts: Recharts restyled (no chart junk, hairline axes, mono ticks, meaning colours).
+
+**States:** skeletons shaped like the real content with a scanning line; empty states are a
+short instruction plus a single action and a small line-art instrument drawing (SVG, drawn in
+code); errors show the `requestId` in mono with a copy button.
+
+**Quality:** WCAG 2.1 AA in both themes (check `--muted` and status colours for contrast), visible
+lime focus rings, keyboard navigation everywhere, responsive from 360px (status bar collapses to
+LEDs only). Theme toggle remembered and respects the system setting. Build a `/app/design`
+page (dev only) showing all tokens and components, used by the visual tests.
 
 ### Pages
 | Route | Content |
