@@ -30,6 +30,24 @@ Choices made where the spec left room (simplest standard option):
   user cannot create databases, create `evalpilot_shadow` once and set `SHADOW_DATABASE_URL`
   (see `.env.example`). Applying existing migrations (`npm run db:deploy`) does not need it.
 
+- **Validation:** request bodies are validated with the shared zod schemas through `nestjs-zod`
+  DTOs (instead of class-validator), so the API, web app, SDK and CLI share one definition, and
+  Swagger is generated from the same schemas.
+- **CSRF:** session cookies are `SameSite=Lax`, and every cookie-authenticated `POST/PATCH/DELETE`
+  must carry an allow-listed `Origin` (or `Referer`). API-key requests are exempt (no cookies).
+- **Rate limits:** login/register are limited per IP + email (10/min by default), `/v1/*` per API
+  key, everything else per IP. All limits are configurable (`RATE_LIMIT_*`).
+- **Header masking:** target header values show only their last 4 characters, and only when the
+  value is at least 12 characters long; shorter values are fully masked.
+- **Pagination** (`?cursor=&limit=`, max 100) is used on lists that grow without bound (projects,
+  suites, runs, traces, red-team runs). Targets, API keys and test cases are returned in full;
+  a suite holds at most 500 cases.
+- **`POST /targets/:id/ping`** is built with the worker in phase 3, so the API itself never calls
+  a target (spec section 5).
+- **npm:** the lockfile is generated with npm 11 (npm 10.8 drops nested dependencies when
+  `overrides` are used); `npm ci` / `npm install` work with npm 10 or 11. `npm run deps:check`
+  verifies the installed tree.
+
 ## Author
 
 **Sheetal Khadanga** — QA Engineer
