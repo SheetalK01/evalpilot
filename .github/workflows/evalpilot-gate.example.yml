@@ -1,0 +1,60 @@
+# Example: gate pull requests on AI quality with EvalPilot.
+#
+# Copy this file into your own repository's .github/workflows/ and set:
+#   secrets.EVALPILOT_API_KEY   a project API key (EvalPilot › Settings › API keys)
+#   vars.EVALPILOT_URL          your EvalPilot API, e.g. https://evalpilot.example.com
+#   vars.EVALPILOT_SUITE_ID     the suite to run (shown on the suite page)
+#
+# The job fails when the suite's pass rate drops below the threshold, so a prompt or model change
+# that breaks your bot cannot be merged. Exit codes: 0 passed, 1 below threshold, 2 error.
+name: AI quality gate (EvalPilot example)
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  evalpilot:
+    # This file is a template; it is skipped in the EvalPilot repository itself.
+    if: github.repository != 'SheetalK01/evalpilot'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      # Deploy or start the version of your bot that this pull request changes, so EvalPilot
+      # tests the new prompt/model (for example a preview deployment).
+      - name: Deploy preview of the bot
+        run: echo "Deploy your preview here"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Run the EvalPilot gate
+        env:
+          EVALPILOT_API_KEY: ${{ secrets.EVALPILOT_API_KEY }}
+          EVALPILOT_URL: ${{ vars.EVALPILOT_URL }}
+        run: |
+          set -o pipefail
+          # The CLI lives in packages/cli of the EvalPilot repo (`npx evalpilot` once published).
+          npx --yes evalpilot@0.1.0 run \
+            --suite "${{ vars.EVALPILOT_SUITE_ID }}" \
+            --threshold 0.9 \
+            --commit "$GITHUB_SHA" \
+            --json | tee evalpilot-result.json
+
+      - name: Add the result to the job summary
+        if: always()
+        run: |
+          if [ -f evalpilot-result.json ]; then
+            {
+              echo "### EvalPilot gate"
+              echo '```json'
+              cat evalpilot-result.json
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi

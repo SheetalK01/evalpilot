@@ -1,0 +1,26 @@
+{
+  "name": "evalpilot",
+  "version": "0.1.0",
+  "private": true,
+  "description": "EvalPilot CLI: run a test suite from CI and fail the build when AI quality drops",
+  "license": "UNLICENSED",
+  "type": "module",
+  "bin": {
+    "evalpilot": "./dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20.16"
+  },
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
+  },
+  "devDependencies": {
+    "@evalpilot/shared": "0.1.0"
+  }
+}
