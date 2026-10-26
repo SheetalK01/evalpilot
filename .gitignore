@@ -29,3 +29,6 @@ perf/results/
 .idea/
 .vscode/*
 !.vscode/extensions.json
+
+# prisma
+prisma/*.db
