@@ -15,6 +15,7 @@ import {
   SHOPBOT_DEMO_CASES,
 } from '@evalpilot/shared';
 import bcrypt from 'bcryptjs';
+import { RUN_HISTORY_COUNT, seedDemoHistory } from './demo-history';
 
 const prisma = new PrismaClient();
 
@@ -51,7 +52,7 @@ async function seedDemoWorkspace(): Promise<'created' | 'exists'> {
     checks: checksSchema.parse(demoCase.checks),
   }));
 
-  await prisma.$transaction(async (tx) => {
+  const ids = await prisma.$transaction(async (tx) => {
     const user = await tx.user.create({
       data: {
         name: DEMO_USER.name,
@@ -71,7 +72,7 @@ async function seedDemoWorkspace(): Promise<'created' | 'exists'> {
     const target = await tx.target.create({
       data: { projectId: project.id, name: 'ShopBot (demo)', type: 'SHOPBOT', timeoutMs: 15000 },
     });
-    await tx.testSuite.create({
+    const suite = await tx.testSuite.create({
       data: {
         projectId: project.id,
         targetId: target.id,
@@ -89,7 +90,10 @@ async function seedDemoWorkspace(): Promise<'created' | 'exists'> {
         },
       },
     });
+    return { projectId: project.id, targetId: target.id, suiteId: suite.id };
   });
+  const { traces } = await seedDemoHistory(prisma, ids);
+  console.log(`✓ Demo history: ${RUN_HISTORY_COUNT} runs, ${traces} traces, 2 red-team runs`);
   return 'created';
 }
 
