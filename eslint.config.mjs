@@ -1,6 +1,8 @@
 // @ts-check
 import js from '@eslint/js';
 import prettier from 'eslint-config-prettier';
+import nextPlugin from '@next/eslint-plugin-next';
+import reactHooks from 'eslint-plugin-react-hooks';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
@@ -15,6 +17,8 @@ export default tseslint.config(
       '**/test-results/**',
       'prisma/migrations/**',
       '**/*.d.ts',
+      'apps/web/next-env.d.ts',
+      'apps/web/.next/**',
     ],
   },
   js.configs.recommended,
@@ -36,9 +40,23 @@ export default tseslint.config(
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
       '@typescript-eslint/restrict-template-expressions': ['error', { allowNumber: true }],
       eqeqeq: ['error', 'always'],
+      // `onClick={() => setOpen(true)}` is idiomatic React; real misuse is still reported.
+      '@typescript-eslint/no-confusing-void-expression': ['error', { ignoreArrowShorthand: true }],
       'no-console': ['error', { allow: ['warn', 'error'] }],
       // NestJS modules are empty classes carrying a decorator.
       '@typescript-eslint/no-extraneous-class': ['error', { allowWithDecorator: true }],
+    },
+  },
+  {
+    files: ['apps/web/**/*.{ts,tsx}'],
+    plugins: { '@next/next': nextPlugin, 'react-hooks': reactHooks },
+    languageOptions: { globals: { ...globals.browser } },
+    settings: { next: { rootDir: 'apps/web' } },
+    rules: {
+      ...nextPlugin.configs.recommended.rules,
+      ...nextPlugin.configs['core-web-vitals'].rules,
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'error',
     },
   },
   {
@@ -50,7 +68,7 @@ export default tseslint.config(
     languageOptions: { sourceType: 'commonjs' },
   },
   {
-    files: ['**/test/**/*.ts', '**/*.spec.ts', '**/*.test.ts'],
+    files: ['**/test/**/*.{ts,tsx}', '**/*.spec.ts', '**/*.test.{ts,tsx}'],
     rules: {
       // Test doubles and supertest's `res.body` (typed any by the library) are fine in tests.
       '@typescript-eslint/no-non-null-assertion': 'off',

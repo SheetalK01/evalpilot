@@ -1,0 +1,269 @@
+@import 'tailwindcss';
+
+/* ─── Flight Deck tokens ─────────────────────────────────────────────────────
+   Colour carries meaning only: signal = brand / primary action, pass, fail,
+   warn (medium risk), info (running / live). Everything else is greyscale.
+   Dark ("night flight") is the base; light ("paper chart") is AA-checked. */
+
+:root,
+[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #0b0d0c;
+  --panel: #121614;
+  --panel-2: #171c19;
+  --line: #232a26;
+  --line-strong: #34403a;
+  --text: #e8ece6;
+  --muted: #7c877f;
+  --signal: #d4ff3a;
+  --signal-ink: #0b0d0c;
+  --pass: #3ddc97;
+  --fail: #ff5a36;
+  --warn: #ffb020;
+  --info: #5ac8fa;
+  --grid-dot: rgb(232 236 230 / 0.055);
+  --shadow: 0 1px 0 rgb(0 0 0 / 0.4);
+}
+
+[data-theme='light'] {
+  color-scheme: light;
+  --bg: #f3f1ea;
+  --panel: #fbfaf6;
+  --panel-2: #f6f4ee;
+  --line: #d9d5c8;
+  --line-strong: #bdb8a8;
+  --text: #151816;
+  --muted: #62665e;
+  --signal: #4b6b00;
+  --signal-ink: #fbfaf6;
+  --pass: #0f7a4a;
+  --fail: #c2361a;
+  --warn: #8a5a00;
+  --info: #0b6e99;
+  --grid-dot: rgb(21 24 22 / 0.075);
+  --shadow: 0 1px 0 rgb(21 24 22 / 0.04);
+}
+
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-panel: var(--panel);
+  --color-panel-2: var(--panel-2);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-signal: var(--signal);
+  --color-signal-ink: var(--signal-ink);
+  --color-pass: var(--pass);
+  --color-fail: var(--fail);
+  --color-warn: var(--warn);
+  --color-info: var(--info);
+
+  --font-display: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, 'SFMono-Regular', Menlo, monospace;
+
+  --radius-xs: 2px;
+  --radius-sm: 3px;
+  --radius-md: 4px;
+
+  --animate-scan: scan 1.6s cubic-bezier(0.2, 0, 0, 1) infinite;
+  --animate-led: led 1.8s ease-in-out infinite;
+  --animate-row-in: row-in 180ms cubic-bezier(0.2, 0, 0, 1) both;
+  --animate-sweep: sweep 3.2s linear infinite;
+  --animate-cursor: cursor 1.4s ease-in-out infinite alternate;
+}
+
+@keyframes scan {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes led {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@keyframes row-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes sweep {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes cursor {
+  from {
+    opacity: 0.35;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ─── Base ──────────────────────────────────────────────────────────────── */
+
+@layer base {
+  html {
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    min-height: 100dvh;
+    background-color: var(--bg);
+    /* Faint dotted chart grid. */
+    background-image: radial-gradient(var(--grid-dot) 1px, transparent 1px);
+    background-size: 24px 24px;
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.55;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    text-wrap: balance;
+  }
+
+  ::selection {
+    background: color-mix(in oklab, var(--signal) 35%, transparent);
+    color: var(--text);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--signal);
+    outline-offset: 2px;
+    border-radius: var(--radius-xs);
+  }
+
+  * {
+    border-color: var(--line);
+  }
+
+  code,
+  kbd,
+  samp,
+  pre {
+    font-family: var(--font-mono);
+  }
+}
+
+/* ─── Signature utilities ───────────────────────────────────────────────── */
+
+@layer components {
+  /* Instrument readout label: small uppercase mono. */
+  .label-mono {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    line-height: 1;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .num {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-feature-settings:
+      'tnum' 1,
+      'zero' 1;
+  }
+
+  /* Hairline panel with crosshair "+" marks on its corners. */
+  .panel {
+    position: relative;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow);
+  }
+
+  .crosshair::before,
+  .crosshair::after {
+    content: '';
+    position: absolute;
+    width: 9px;
+    height: 9px;
+    pointer-events: none;
+    background:
+      linear-gradient(var(--line-strong), var(--line-strong)) center / 1px 100% no-repeat,
+      linear-gradient(var(--line-strong), var(--line-strong)) center / 100% 1px no-repeat;
+  }
+
+  .crosshair::before {
+    top: -5px;
+    left: -5px;
+  }
+
+  .crosshair::after {
+    right: -5px;
+    bottom: -5px;
+  }
+
+  /* Skeleton block with a scanning highlight. */
+  .scan {
+    position: relative;
+    overflow: hidden;
+    background: var(--panel-2);
+    border-radius: var(--radius-xs);
+  }
+
+  .scan::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in oklab, var(--info) 14%, transparent),
+      transparent
+    );
+    animation: var(--animate-scan);
+  }
+
+  .hairline-x > * + * {
+    border-left: 1px solid var(--line);
+  }
+
+  .hairline-y > * + * {
+    border-top: 1px solid var(--line);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
