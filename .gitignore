@@ -32,3 +32,10 @@ perf/results/
 
 # prisma
 prisma/*.db
+
+# E2E / load test output
+.next-e2e/
+e2e/reports/
+e2e/test-results/
+e2e/.auth/
+perf/results/

@@ -22,7 +22,10 @@ function Section({ label, children, action }: { label: string; children: ReactNo
 
 function TextBlock({ text }: { text: string | null }) {
   return (
-    <pre className="num max-h-64 overflow-auto rounded-sm border border-line bg-bg p-3 text-[12.5px] leading-relaxed whitespace-pre-wrap text-text">
+    <pre
+      tabIndex={0}
+      className="num max-h-64 overflow-auto rounded-sm border border-line bg-bg p-3 text-[12.5px] leading-relaxed whitespace-pre-wrap text-text"
+    >
       {text ?? '—'}
     </pre>
   );

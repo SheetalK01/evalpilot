@@ -2,6 +2,8 @@ import type { NextConfig } from 'next';
 
 const config: NextConfig = {
   reactStrictMode: true,
+  // E2E builds into its own folder so they never clash with `next dev`.
+  distDir: process.env.NEXT_DIST_DIR ?? '.next',
   // Small self-contained server for the Docker image.
   output: 'standalone',
   outputFileTracingRoot: new URL('../..', import.meta.url).pathname,

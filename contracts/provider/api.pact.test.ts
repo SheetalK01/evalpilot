@@ -5,13 +5,23 @@ import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 import type { INestApplication } from '@nestjs/common';
 import type * as NestCore from '@nestjs/core';
+import type * as NestJwt from '@nestjs/jwt';
 import type * as ServerCore from '@evalpilot/server-core';
 import { Verifier } from '@pact-foundation/pact';
 import type { PrismaClient } from '@prisma/client';
 import { config as loadDotenv } from 'dotenv';
 import { afterAll, beforeAll, describe, it } from 'vitest';
 import type * as AppSetup from '../../apps/api/src/app.setup';
-import { PACT_API_KEY, PACT_DIR, PACT_RUN_ID, PACT_SUITE_ID, PROVIDER } from '../pact.config';
+import {
+  PACT_API_KEY,
+  PACT_DIR,
+  PACT_KEY_ID,
+  PACT_PROJECT_ID,
+  PACT_RUN_ID,
+  PACT_SUITE_ID,
+  PACT_USER_ID,
+  PROVIDER,
+} from '../pact.config';
 
 const REPO = resolve(__dirname, '../..');
 const requireApi = createRequire(resolve(REPO, 'apps/api/dist/main.js'));
@@ -35,6 +45,8 @@ describe('Provider verification: evalpilot-api honours its consumers’ contract
   let app: INestApplication;
   let prisma: PrismaClient;
   let baseUrl: string;
+  let sessionCookie: string;
+  let webOrigin: string;
 
   beforeAll(async () => {
     useTestEnvironment();
@@ -48,6 +60,9 @@ describe('Provider verification: evalpilot-api honours its consumers’ contract
     await app.listen(0, '127.0.0.1');
     baseUrl = await app.getUrl();
     prisma = app.get(PrismaService);
+    const { JwtService } = requireApi('@nestjs/jwt') as typeof NestJwt;
+    sessionCookie = `ep_session=${app.get(JwtService).sign({ sub: PACT_USER_ID })}`;
+    webOrigin = app.get<{ webUrl: string }>(APP_CONFIG).webUrl;
   });
 
   afterAll(async () => {
@@ -57,10 +72,15 @@ describe('Provider verification: evalpilot-api honours its consumers’ contract
   /** Fixed ids from the contracts; recreated for every interaction so states never leak. */
   async function resetPactData(): Promise<{ projectId: string }> {
     await prisma.user.deleteMany({ where: { email: 'pact@test.evalpilot.dev' } });
-    const user = await prisma.user.create({ data: { name: 'Pact', email: 'pact@test.evalpilot.dev' } });
-    const project = await prisma.project.create({ data: { ownerId: user.id, name: 'Pact project' } });
+    const user = await prisma.user.create({
+      data: { id: PACT_USER_ID, name: 'Pact', email: 'pact@test.evalpilot.dev' },
+    });
+    const project = await prisma.project.create({
+      data: { id: PACT_PROJECT_ID, ownerId: user.id, name: 'Pact project' },
+    });
     await prisma.apiKey.create({
       data: {
+        id: PACT_KEY_ID,
         projectId: project.id,
         name: 'Pact',
         prefix: PACT_API_KEY.slice(0, 12),
@@ -105,7 +125,17 @@ describe('Provider verification: evalpilot-api honours its consumers’ contract
       providerBaseUrl: baseUrl,
       pactUrls,
       logLevel: 'warn',
+      // The web app authenticates with its session cookie and sends its Origin (the browser does
+      // both); give every request the pact user's session. Key-authenticated routes ignore it.
+      requestFilter: (req, _res, next) => {
+        req.headers.cookie = sessionCookie;
+        req.headers.origin = webOrigin;
+        next();
+      },
       stateHandlers: {
+        'a signed-in user with a project and an API key': async () => {
+          await resetPactData();
+        },
         'a project with an API key': async () => {
           await resetPactData();
         },

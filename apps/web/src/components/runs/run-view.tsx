@@ -77,7 +77,10 @@ function ResultRow({
         >
           <section className="min-w-0 space-y-2">
             <h3 className="label-mono">OUTPUT</h3>
-            <pre className="num max-h-72 overflow-auto rounded-sm border border-line bg-panel p-3 text-[12.5px] leading-relaxed whitespace-pre-wrap text-text">
+            <pre
+              tabIndex={0}
+              className="num max-h-72 overflow-auto rounded-sm border border-line bg-panel p-3 text-[12.5px] leading-relaxed whitespace-pre-wrap text-text"
+            >
               {result.output ?? '— no answer —'}
             </pre>
           </section>

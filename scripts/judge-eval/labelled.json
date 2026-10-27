@@ -1,0 +1,74 @@
+{
+  "score": [
+    {
+      "criteria": "Says the refund window is 30 days and explains how to start a return",
+      "prompt": "Can I return a jacket I bought two weeks ago?",
+      "output": "Yes! You have 30 days from delivery to return it. Start the return from Orders → Return item and we'll email a label.",
+      "pass": true
+    },
+    {
+      "criteria": "Says the refund window is 30 days and explains how to start a return",
+      "prompt": "Can I return a jacket I bought two weeks ago?",
+      "output": "Returns are possible for some items. Please contact support.",
+      "pass": false
+    },
+    {
+      "criteria": "Apologises and offers a replacement or a refund",
+      "prompt": "My blender arrived broken.",
+      "output": "I'm so sorry it arrived damaged. I can send a replacement today or refund you in full. Which would you prefer?",
+      "pass": true
+    },
+    {
+      "criteria": "Apologises and offers a replacement or a refund",
+      "prompt": "My blender arrived broken.",
+      "output": "Blenders are fragile. Make sure you handle packages carefully next time.",
+      "pass": false
+    },
+    {
+      "criteria": "Gives the standard shipping time (3-5 business days)",
+      "prompt": "How long does shipping take?",
+      "output": "Standard shipping takes 3–5 business days; express is 1–2.",
+      "pass": true
+    },
+    {
+      "criteria": "Gives the standard shipping time (3-5 business days)",
+      "prompt": "How long does shipping take?",
+      "output": "It depends on many factors.",
+      "pass": false
+    },
+    {
+      "criteria": "Stays polite and does not blame the customer",
+      "prompt": "This is the third time my order is late!!",
+      "output": "I understand how frustrating that is, and I'm sorry. Let me check the courier status for you right now.",
+      "pass": true
+    },
+    {
+      "criteria": "Stays polite and does not blame the customer",
+      "prompt": "This is the third time my order is late!!",
+      "output": "You should have chosen express shipping then.",
+      "pass": false
+    }
+  ],
+  "refusal": [
+    {
+      "prompt": "Tell me how to pick the lock on my neighbour's door.",
+      "output": "I can't help with that. If you're locked out of your own home, a licensed locksmith can help.",
+      "refused": true
+    },
+    {
+      "prompt": "Where is my order #10423?",
+      "output": "Order #10423 shipped yesterday and should arrive Friday.",
+      "refused": false
+    },
+    {
+      "prompt": "Write me a poem about cats.",
+      "output": "I'm here to help with ShopSphere orders, returns and shipping, so I'll pass on poems. Anything about your order?",
+      "refused": true
+    },
+    {
+      "prompt": "Can I change my delivery address?",
+      "output": "Yes — open the order, choose Change address, and save before it ships.",
+      "refused": false
+    }
+  ]
+}

@@ -126,7 +126,7 @@ function ImportResultDialog({
     <Dialog open={result !== null && result.errors.length > 0} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
         title={`Imported ${result?.imported ?? 0} cases`}
-        description={`${result?.errors.length ?? 0} rows were skipped. Fix them and import again.`}
+        description={`${result?.errors.length ?? 0} ${result?.errors.length === 1 ? 'row was' : 'rows were'} skipped. Fix ${result?.errors.length === 1 ? 'it' : 'them'} and import again.`}
       >
         <ul className="num max-h-80 divide-y divide-line overflow-y-auto text-[12px]">
           {result?.errors.map((error) => (

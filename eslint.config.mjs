@@ -12,6 +12,8 @@ export default tseslint.config(
       '**/node_modules/**',
       '**/dist/**',
       '**/.next/**',
+      '**/.next-e2e/**',
+      'e2e/reports/**',
       '**/coverage/**',
       '**/playwright-report/**',
       '**/test-results/**',
@@ -81,6 +83,19 @@ export default tseslint.config(
       '@typescript-eslint/unbound-method': 'off',
       '@typescript-eslint/no-confusing-void-expression': 'off',
     },
+  },
+  {
+    // k6 scripts run in k6's own JavaScript runtime.
+    files: ['perf/**/*.js'],
+    languageOptions: {
+      sourceType: 'module',
+      globals: { __ENV: 'readonly', __VU: 'readonly', __ITER: 'readonly' },
+    },
+  },
+  {
+    // Playwright fixtures must destructure their (empty) dependencies: `async ({}, use) => …`.
+    files: ['e2e/fixtures/**/*.ts'],
+    rules: { 'no-empty-pattern': 'off' },
   },
   {
     files: ['prisma/seed.ts', 'scripts/**/*.ts'],

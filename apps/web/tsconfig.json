@@ -12,9 +12,22 @@
     "declaration": false,
     "sourceMap": false,
     "types": ["node", "vitest/globals", "@testing-library/jest-dom"],
-    "plugins": [{ "name": "next" }],
-    "paths": { "@/*": ["./src/*"] }
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
-  "include": ["next-env.d.ts", "next.config.ts", "src", "test", ".next/types/**/*.ts"],
+  "include": [
+    ".next/types/**/*.ts",
+    "next-env.d.ts",
+    "next.config.ts",
+    "src",
+    "test",
+    ".next-e2e/types/**/*.ts"
+  ],
   "exclude": ["node_modules"]
 }
