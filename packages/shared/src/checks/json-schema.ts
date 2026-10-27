@@ -1,6 +1,7 @@
 import { Ajv, type ValidateFunction } from 'ajv';
 
-const ajv = new Ajv({ allErrors: false, strict: false });
+// Created on first use, so browser bundles that import @evalpilot/shared do not pay for Ajv.
+let ajv: Ajv | null = null;
 const cache = new Map<string, ValidateFunction>();
 const CACHE_LIMIT = 200;
 
@@ -8,6 +9,7 @@ function compile(schema: Record<string, unknown>): ValidateFunction {
   const key = JSON.stringify(schema);
   const cached = cache.get(key);
   if (cached) return cached;
+  ajv ??= new Ajv({ allErrors: false, strict: false });
   const validate = ajv.compile(schema);
   if (cache.size >= CACHE_LIMIT) cache.clear();
   cache.set(key, validate);
