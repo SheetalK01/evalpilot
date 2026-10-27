@@ -39,6 +39,8 @@ fi
 # ── Build, migrate, seed ────────────────────────────────────────────────────
 [[ -d node_modules ]] || { bold "Installing dependencies…"; npm ci; }
 bold "Building shared packages…"
+# npm 11 skips install scripts, so make sure the Prisma client exists.
+npx prisma generate >/dev/null
 npm run build:packages --silent >/dev/null
 bold "Applying database migrations…"
 npx prisma migrate deploy >/dev/null || fail "Migrations failed. Is MySQL running (brew services start mysql) and DATABASE_URL correct?"
