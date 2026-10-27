@@ -191,7 +191,7 @@ export function Dashboard() {
         <Panel title="COST & P95 LATENCY · 14D">
           {data.costTrend.some((d) => d.tracesCostUsd + d.runsCostUsd > 0) ? (
             <CostLatencyChart
-              height={260}
+              height={300}
               points={data.costTrend.map((day) => ({
                 label: day.date.slice(5),
                 costUsd: day.tracesCostUsd + day.runsCostUsd,

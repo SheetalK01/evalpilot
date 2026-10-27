@@ -106,3 +106,18 @@ describe('instruments', () => {
     expect(onRetry).toHaveBeenCalledOnce();
   });
 });
+
+describe('RollingNumber frames', () => {
+  it('every intermediate frame shows whole numbers in the target format', async () => {
+    const { interpolate } = await import('@/components/instruments/rolling-number');
+    for (let step = 0; step <= 20; step++) {
+      const t = step / 20;
+      expect(interpolate('0%', '91.7%', t)).toMatch(/^\d{1,3}\.\d%$/);
+      expect(interpolate('$0.014', '$0.086', t)).toMatch(/^\$0\.0\d{2}$/);
+      expect(interpolate('3/24', '24/24', t)).toMatch(/^\d{1,2}\/24$/);
+      expect(interpolate('', '1,864', t)).toMatch(/^\d{1,3}(,\d{3})*$/);
+    }
+    expect(interpolate('0%', '91.7%', 1)).toBe('91.7%');
+    expect(interpolate('40%', '100%', 0.5)).toBe('70%');
+  });
+});
