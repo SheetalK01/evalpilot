@@ -1,0 +1,69 @@
+import { Reflector } from '@nestjs/core';
+import { ApiKeyAuth } from '../decorators/auth.decorators';
+import { ForbiddenException } from '@nestjs/common';
+import type { AppConfig } from '@evalpilot/server-core';
+import { CsrfOriginGuard } from './csrf-origin.guard';
+
+const guard = new CsrfOriginGuard(
+  { allowedOrigins: ['http://localhost:3000'] } as AppConfig,
+  new Reflector(),
+);
+
+class MachineController {
+  @ApiKeyAuth()
+  ingest(): void {}
+}
+const contextFor = (
+  method: string,
+  headers: Record<string, string> = {},
+  type = 'http',
+  handler: () => void = () => undefined,
+) =>
+  ({
+    getType: () => type,
+    getHandler: () => handler,
+    getClass: () => Object,
+    switchToHttp: () => ({ getRequest: () => ({ method, headers }) }),
+  }) as never;
+
+describe('CsrfOriginGuard', () => {
+  it.each(['GET', 'HEAD', 'OPTIONS'])('allows safe method %s without an Origin', (method) => {
+    expect(guard.canActivate(contextFor(method))).toBe(true);
+  });
+
+  it('leaves WebSocket messages to the handshake origin check', () => {
+    expect(guard.canActivate(contextFor('POST', {}, 'ws'))).toBe(true);
+  });
+
+  it('skips API-key routes, which ignore cookies (the API-key guard answers 401 instead)', () => {
+    expect(guard.canActivate(contextFor('POST', {}, 'http', MachineController.prototype.ingest))).toBe(true);
+  });
+
+  it('allows an allow-listed Origin', () => {
+    expect(guard.canActivate(contextFor('POST', { origin: 'http://localhost:3000' }))).toBe(true);
+  });
+
+  it('falls back to the Referer origin', () => {
+    expect(guard.canActivate(contextFor('DELETE', { referer: 'http://localhost:3000/app/settings' }))).toBe(
+      true,
+    );
+  });
+
+  it('exempts API-key (Bearer) requests, which carry no cookies', () => {
+    expect(guard.canActivate(contextFor('POST', { authorization: 'Bearer ep_live_abc' }))).toBe(true);
+  });
+
+  it.each([
+    ['no Origin or Referer', {}, 'Missing Origin header'],
+    ['an unparseable Referer', { referer: 'not a url' }, 'Missing Origin header'],
+    ['a foreign Origin', { origin: 'https://evil.example' }, 'Origin not allowed'],
+    ['a look-alike Origin', { origin: 'http://localhost:3000.evil.example' }, 'Origin not allowed'],
+    [
+      'a Basic auth header',
+      { authorization: 'Basic abc', origin: 'https://evil.example' },
+      'Origin not allowed',
+    ],
+  ])('blocks a POST with %s', (_label, headers, message) => {
+    expect(() => guard.canActivate(contextFor('POST', headers))).toThrow(new ForbiddenException(message));
+  });
+});

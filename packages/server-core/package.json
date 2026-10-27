@@ -1,0 +1,34 @@
+{
+  "name": "@evalpilot/server-core",
+  "version": "0.1.0",
+  "private": true,
+  "description": "NestJS modules shared by the EvalPilot API and worker: config, Prisma, Redis, queues, realtime publishing, mappers",
+  "license": "UNLICENSED",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "jest",
+    "test:coverage": "jest --coverage"
+  },
+  "dependencies": {
+    "@evalpilot/shared": "0.1.0",
+    "bullmq": "5.81.5",
+    "dotenv": "17.4.2",
+    "ioredis": "5.11.1",
+    "zod": "4.6.7"
+  },
+  "peerDependencies": {
+    "@nestjs/common": "^11.0.0",
+    "@prisma/client": "^6.19.0"
+  },
+  "devDependencies": {
+    "@types/jest": "30.0.0",
+    "jest": "30.5.2",
+    "ts-jest": "29.4.15"
+  }
+}

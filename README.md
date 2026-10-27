@@ -11,6 +11,81 @@ production traces through a small SDK, and a CLI that gates CI on AI quality.
 **Stack:** Next.js 15 · NestJS 11 · TypeScript · Prisma + MySQL · BullMQ + Redis · Socket.IO ·
 Claude API · Playwright · Jest · Vitest · Pact · k6 · Docker · GitHub Actions
 
+## Implementation notes
+
+Choices made where the spec left room (simplest standard option):
+
+- **Tool versions** are pinned for Node 20: TypeScript 5.9, ESLint 9, Vitest 4.1, lint-staged 16,
+  Prisma 6.19 (stable and CommonJS-friendly for NestJS 11). Two `overrides` in `package.json` pull in
+  patched `deepmerge-ts` and `esbuild` so `npm audit` reports 0 vulnerabilities.
+- **ShopBot target URL** is not stored in the database; the worker reads `SHOPBOT_URL`, so the same
+  data works with and without Docker.
+- **History stays readable:** `test_results.case_name` snapshots the case name and
+  `test_case_id` becomes `NULL` if a case is deleted. Deleting a target unlinks its suites
+  (`target_id = NULL`) instead of deleting them.
+- **Red-team run status** uses `QUEUED | RUNNING | COMPLETED | ERROR | CANCELLED`.
+- **Test database reset** = `prisma migrate deploy` + truncate every table in `evalpilot_test`
+  (`npm run db:reset:test`). The script refuses any database whose name does not end in `_test`.
+- **Shadow database:** `npm run db:migrate` (schema changes) needs a shadow DB. If your MySQL
+  user cannot create databases, create `evalpilot_shadow` once and set `SHADOW_DATABASE_URL`
+  (see `.env.example`). Applying existing migrations (`npm run db:deploy`) does not need it.
+
+- **Validation:** request bodies are validated with the shared zod schemas through `nestjs-zod`
+  DTOs (instead of class-validator), so the API, web app, SDK and CLI share one definition, and
+  Swagger is generated from the same schemas.
+- **CSRF:** session cookies are `SameSite=Lax`, and every cookie-authenticated `POST/PATCH/DELETE`
+  must carry an allow-listed `Origin` (or `Referer`). API-key requests are exempt (no cookies).
+- **Rate limits:** login/register are limited per IP + email (10/min by default), `/v1/*` per API
+  key, everything else per IP. All limits are configurable (`RATE_LIMIT_*`).
+- **Header masking:** target header values show only their last 4 characters, and only when the
+  value is at least 12 characters long; shorter values are fully masked.
+- **Pagination** (`?cursor=&limit=`, max 100) is used on lists that grow without bound (projects,
+  suites, runs, traces, red-team runs). Targets, API keys and test cases are returned in full;
+  a suite holds at most 500 cases.
+- **`POST /targets/:id/ping`** is built with the worker in phase 3, so the API itself never calls
+  a target (spec section 5).
+- **`packages/server-core`** (not in the spec's layout) holds the NestJS modules the API and the
+  worker share: config, Prisma, Redis, queues, the realtime publisher and the response mappers.
+  This is how "the worker shares the domain modules" (spec section 3) is done without one app
+  importing another's source.
+- **Queues:** BullMQ 5 (stable; BullMQ 6 is a new major with pluggable backends). Every Redis key,
+  queue and channel lives under `REDIS_PREFIX` (default `evalpilot`); each test file uses a random
+  prefix, so tests never collide with each other or with a running dev worker.
+- **Live judge:** `claude-opus-5-5` through `client.beta.messages.parse` with a zod schema
+  (structured JSON output), `effort` from `JUDGE_EFFORT` (default `medium`), and server-side refusal
+  fallbacks (`fallbacks: "default"`) on models that support them. Answers are fenced in tags and
+  the judge is told to treat them as data (prompt-injection resistant). In live mode, `refusal`
+  checks are decided by the judge; in mock mode by a heuristic.
+- **SSRF guard** works at connect time: a custom DNS lookup rejects any private address the host
+  resolves to (so DNS rebinding does not help), literal private IPs are rejected before the call,
+  and redirects are refused for user-defined targets. The built-in ShopBot is exempt (its URL is
+  server config, not user input).
+- **Cancelling** a running run stops it before its next test case; cases already in flight
+  (at most 4) finish and are kept.
+- **SDK** (`@evalpilot/sdk`) has no runtime dependencies (about 7 KB). Its `TraceInput` type is
+  declared in the SDK and checked against `@evalpilot/shared` at compile time, so it cannot drift
+  from the API. Each trace gets an `externalId`, so retried batches are never stored twice.
+- **CLI** exit codes: `0` passed, `1` below threshold, `2` error (bad usage, API error, run
+  `ERROR`/`CANCELLED`, timeout). Until the CLI is published, run it with
+  `npm run cli -- run --suite <id>` (after `npm run build`).
+- **ShopBot** (Fastify) is deliberately vulnerable in mock mode to 6 of the 26 attacks (risk
+  score 22, MEDIUM), so the red-team report has findings. `SHOPBOT_PROMPT_VERSION=v2` switches
+  to a "cheaper" prompt that drops the 30-day refund window and the 3–5 day shipping time: the
+  demo suite goes from 8/8 to 6/8 and the CI gate fails. ShopBot's tests check the seeded demo
+  suite and the attack library against its answers, so the demo can never silently break.
+- **Local SDK key:** if `EVALPILOT_API_KEY` is set, the seed registers it (hash only) on the demo
+  project, so ShopBot's traces show up without manual setup.
+- **CSRF check** is skipped on API-key routes (`/v1/*`): they never read cookies, and a missing
+  key should give a clear `401`, not `403 Missing Origin header`.
+- **Usage charts** are aggregated in memory from a project's traces in the selected range; at
+  scale this would move to SQL `GROUP BY` or a rollup table.
+- **Pact** 16.5 (17.x needs Node 22). The SDK and CLI are consumers now; the web app's contract is
+  added with the web app. Provider verification boots the compiled API on the test database and
+  sets up each provider state with Prisma.
+- **npm:** the lockfile is generated with npm 11 (npm 10.8 drops nested dependencies when
+  `overrides` are used); `npm ci` / `npm install` work with npm 10 or 11. `npm run deps:check`
+  verifies the installed tree.
+
 ## Author
 
 **Sheetal Khadanga** — QA Engineer

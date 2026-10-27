@@ -1,0 +1,338 @@
+// EvalPilot data model.
+// Tables use snake_case names (via @@map / @map) so they read well in MySQL Workbench.
+// Schema changes only through Prisma Migrate (`npm run db:migrate`).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider          = "mysql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+// ─── Enums ──────────────────────────────────────────────────────────────────
+
+enum TargetType {
+  HTTP
+  SHOPBOT
+}
+
+enum HttpMethod {
+  GET
+  POST
+  PUT
+  PATCH
+}
+
+enum RunStatus {
+  QUEUED
+  RUNNING
+  PASSED
+  FAILED
+  ERROR
+  CANCELLED
+}
+
+enum RunTrigger {
+  UI
+  CLI
+  API
+}
+
+enum ResultStatus {
+  PASSED
+  FAILED
+  ERROR
+}
+
+enum RedteamStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  ERROR
+  CANCELLED
+}
+
+enum Severity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum AttackCategory {
+  PROMPT_INJECTION
+  JAILBREAK
+  SYSTEM_PROMPT_LEAK
+  PII_LEAK
+  HARMFUL_CONTENT
+  OFF_TOPIC
+}
+
+enum TraceStatus {
+  OK
+  ERROR
+}
+
+// ─── Accounts ───────────────────────────────────────────────────────────────
+
+model User {
+  id           String    @id @default(cuid())
+  name         String    @db.VarChar(80)
+  /// Always stored lower-case.
+  email        String    @unique @db.VarChar(254)
+  /// bcrypt hash; null for GitHub-only accounts.
+  passwordHash String?   @map("password_hash") @db.VarChar(100)
+  githubId     String?   @unique @map("github_id") @db.VarChar(40)
+  avatarUrl    String?   @map("avatar_url") @db.VarChar(500)
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  projects     Project[]
+
+  @@map("users")
+}
+
+model Project {
+  id           String        @id @default(cuid())
+  ownerId      String        @map("owner_id")
+  name         String        @db.VarChar(80)
+  description  String?       @db.VarChar(500)
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+  owner        User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  apiKeys      ApiKey[]
+  targets      Target[]
+  suites       TestSuite[]
+  redteamRuns  RedteamRun[]
+  traces       Trace[]
+
+  @@index([ownerId, createdAt])
+  @@map("projects")
+}
+
+model ApiKey {
+  id         String    @id @default(cuid())
+  projectId  String    @map("project_id")
+  name       String    @db.VarChar(60)
+  /// First characters of the key (e.g. `ep_live_ab12`), safe to display.
+  prefix     String    @db.VarChar(20)
+  /// SHA-256 hex digest of the full key. The raw key is never stored.
+  keyHash    String    @unique @map("key_hash") @db.Char(64)
+  lastUsedAt DateTime? @map("last_used_at")
+  revokedAt  DateTime? @map("revoked_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  project    Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@map("api_keys")
+}
+
+// ─── Targets, suites, cases ─────────────────────────────────────────────────
+
+model Target {
+  id           String       @id @default(cuid())
+  projectId    String       @map("project_id")
+  name         String       @db.VarChar(80)
+  type         TargetType
+  url          String?      @db.VarChar(2048)
+  method       HttpMethod   @default(POST)
+  /// AES-256-GCM ciphertext of the headers JSON (may contain secrets).
+  headersJson  String?      @map("headers_json") @db.Text
+  bodyTemplate String?      @map("body_template") @db.Text
+  /// JSON path to the answer in the response body, e.g. `$.choices[0].message.content`.
+  responsePath String?      @map("response_path") @db.VarChar(255)
+  timeoutMs    Int          @default(15000) @map("timeout_ms")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+  project      Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  suites       TestSuite[]
+  redteamRuns  RedteamRun[]
+
+  @@index([projectId])
+  @@map("targets")
+}
+
+model TestSuite {
+  id            String     @id @default(cuid())
+  projectId     String     @map("project_id")
+  /// Null when the target was deleted; runs are blocked until a target is chosen.
+  targetId      String?    @map("target_id")
+  name          String     @db.VarChar(120)
+  description   String?    @db.VarChar(1000)
+  /// Minimum pass rate (0–1) for a run to count as PASSED.
+  passThreshold Float      @default(0.9) @map("pass_threshold")
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
+  project       Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  target        Target?    @relation(fields: [targetId], references: [id], onDelete: SetNull)
+  cases         TestCase[]
+  runs          TestRun[]
+
+  @@index([projectId])
+  @@index([targetId])
+  @@map("test_suites")
+}
+
+model TestCase {
+  id         String       @id @default(cuid())
+  suiteId    String       @map("suite_id")
+  name       String       @db.VarChar(120)
+  input      String       @db.Text
+  /// Array of checks, validated by `checksSchema` in @evalpilot/shared.
+  checksJson Json         @map("checks_json")
+  /// Array of tag strings.
+  tags       Json
+  position   Int          @default(0)
+  createdAt  DateTime     @default(now()) @map("created_at")
+  updatedAt  DateTime     @updatedAt @map("updated_at")
+  suite      TestSuite    @relation(fields: [suiteId], references: [id], onDelete: Cascade)
+  results    TestResult[]
+
+  @@index([suiteId, position])
+  @@map("test_cases")
+}
+
+// ─── Runs ───────────────────────────────────────────────────────────────────
+
+model TestRun {
+  id           String       @id @default(cuid())
+  suiteId      String       @map("suite_id")
+  status       RunStatus    @default(QUEUED)
+  trigger      RunTrigger   @default(UI)
+  commitSha    String?      @map("commit_sha") @db.VarChar(40)
+  total        Int          @default(0)
+  passed       Int          @default(0)
+  failed       Int          @default(0)
+  /// 0–1
+  passRate     Float?       @map("pass_rate")
+  avgLatencyMs Int?         @map("avg_latency_ms")
+  totalTokens  Int          @default(0) @map("total_tokens")
+  estCostUsd   Decimal      @default(0) @map("est_cost_usd") @db.Decimal(12, 6)
+  startedAt    DateTime?    @map("started_at")
+  finishedAt   DateTime?    @map("finished_at")
+  error        String?      @db.VarChar(1000)
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+  suite        TestSuite    @relation(fields: [suiteId], references: [id], onDelete: Cascade)
+  results      TestResult[]
+
+  @@index([suiteId, createdAt])
+  @@index([status])
+  @@map("test_runs")
+}
+
+model TestResult {
+  id               String       @id @default(cuid())
+  runId            String       @map("run_id")
+  /// Null if the case was deleted after the run; `caseName` keeps the history readable.
+  testCaseId       String?      @map("test_case_id")
+  caseName         String       @map("case_name") @db.VarChar(120)
+  /// Position of the case when the run started, so results keep the suite order.
+  position         Int          @default(0)
+  status           ResultStatus
+  output           String?      @db.Text
+  latencyMs        Int?         @map("latency_ms")
+  tokens           Int          @default(0)
+  estCostUsd       Decimal      @default(0) @map("est_cost_usd") @db.Decimal(12, 6)
+  /// Why the case could not be evaluated (status ERROR), e.g. a target timeout.
+  error            String?      @db.VarChar(1000)
+  checkResultsJson Json         @map("check_results_json")
+  judgeScore       Float?       @map("judge_score")
+  judgeReason      String?      @map("judge_reason") @db.Text
+  createdAt        DateTime     @default(now()) @map("created_at")
+  run              TestRun      @relation(fields: [runId], references: [id], onDelete: Cascade)
+  testCase         TestCase?    @relation(fields: [testCaseId], references: [id], onDelete: SetNull)
+
+  /// Makes result writes idempotent when a job is retried.
+  @@unique([runId, testCaseId])
+  @@index([runId, position])
+  @@index([testCaseId])
+  @@map("test_results")
+}
+
+// ─── Red-team ───────────────────────────────────────────────────────────────
+
+model Attack {
+  id            String           @id @default(cuid())
+  category      AttackCategory
+  name          String           @unique @db.VarChar(120)
+  prompt        String           @db.Text
+  /// Detection rules, validated by `detectionRulesSchema` in @evalpilot/shared.
+  detectionJson Json             @map("detection_json")
+  severity      Severity
+  createdAt     DateTime         @default(now()) @map("created_at")
+  updatedAt     DateTime         @updatedAt @map("updated_at")
+  findings      RedteamFinding[]
+
+  @@index([category])
+  @@map("attacks")
+}
+
+model RedteamRun {
+  id         String           @id @default(cuid())
+  projectId  String           @map("project_id")
+  targetId   String?          @map("target_id")
+  status     RedteamStatus    @default(QUEUED)
+  total      Int              @default(0)
+  vulnerable Int              @default(0)
+  /// 0–100, weighted by severity.
+  riskScore  Int?             @map("risk_score")
+  startedAt  DateTime?        @map("started_at")
+  finishedAt DateTime?        @map("finished_at")
+  error      String?          @db.VarChar(1000)
+  createdAt  DateTime         @default(now()) @map("created_at")
+  updatedAt  DateTime         @updatedAt @map("updated_at")
+  project    Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  target     Target?          @relation(fields: [targetId], references: [id], onDelete: SetNull)
+  findings   RedteamFinding[]
+
+  @@index([projectId, createdAt])
+  @@index([targetId])
+  @@map("redteam_runs")
+}
+
+model RedteamFinding {
+  id           String     @id @default(cuid())
+  redteamRunId String     @map("redteam_run_id")
+  attackId     String     @map("attack_id")
+  output       String?    @db.Text
+  vulnerable   Boolean
+  evidence     String?    @db.Text
+  severity     Severity
+  createdAt    DateTime   @default(now()) @map("created_at")
+  redteamRun   RedteamRun @relation(fields: [redteamRunId], references: [id], onDelete: Cascade)
+  attack       Attack     @relation(fields: [attackId], references: [id], onDelete: Cascade)
+
+  @@unique([redteamRunId, attackId])
+  @@index([attackId])
+  @@map("redteam_findings")
+}
+
+// ─── Traces ─────────────────────────────────────────────────────────────────
+
+model Trace {
+  id           String      @id @default(cuid())
+  projectId    String      @map("project_id")
+  /// Optional id from the client SDK, for de-duplication and correlation.
+  externalId   String?     @map("external_id") @db.VarChar(100)
+  name         String      @db.VarChar(120)
+  input        String?     @db.Text
+  output       String?     @db.Text
+  model        String?     @db.VarChar(100)
+  latencyMs    Int         @map("latency_ms")
+  inputTokens  Int         @default(0) @map("input_tokens")
+  outputTokens Int         @default(0) @map("output_tokens")
+  estCostUsd   Decimal     @default(0) @map("est_cost_usd") @db.Decimal(12, 6)
+  status       TraceStatus @default(OK)
+  error        String?     @db.VarChar(1000)
+  metadataJson Json?       @map("metadata_json")
+  startedAt    DateTime    @map("started_at")
+  createdAt    DateTime    @default(now()) @map("created_at")
+  project      Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, externalId])
+  @@index([projectId, startedAt])
+  @@map("traces")
+}

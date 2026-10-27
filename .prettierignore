@@ -1,0 +1,11 @@
+node_modules
+dist
+.next
+coverage
+playwright-report
+test-results
+prisma/migrations
+package-lock.json
+LICENSE
+docs/BUILD_SPEC.md
+docs/CLAUDE_PROMPT.md
