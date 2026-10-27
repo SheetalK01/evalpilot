@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 300" width="1200" height="300" role="img" aria-label="EvalPilot: test your AI before your users do">
+  <defs>
+    <pattern id="dots" width="24" height="24" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#1f2421"/>
+    </pattern>
+  </defs>
+  <rect width="1200" height="300" fill="#0b0d0c"/>
+  <rect width="1200" height="300" fill="url(#dots)"/>
+  <g transform="translate(80 86) scale(4)">
+    <circle cx="16" cy="16" r="13" fill="none" stroke="#d4ff3a" stroke-width="1.75"/>
+    <path d="M5 18.5 H27" stroke="#d4ff3a" stroke-width="1.75" stroke-linecap="round"/>
+    <path d="M11 12.5 L14.5 15.5 L21.5 8.5" fill="none" stroke="#d4ff3a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <text x="250" y="140" fill="#eef0ea" font-family="'IBM Plex Mono', ui-monospace, Menlo, monospace" font-size="54" font-weight="600" letter-spacing="9">EVALPILOT</text>
+  <text x="252" y="190" fill="#9aa096" font-family="'Space Grotesk', system-ui, sans-serif" font-size="28">Test your AI before your users do.</text>
+  <g font-family="'IBM Plex Mono', ui-monospace, Menlo, monospace" font-size="15" letter-spacing="1.5">
+    <text x="252" y="238" fill="#d4ff3a">TEST SUITES</text>
+    <text x="392" y="238" fill="#5b6157">·</text>
+    <text x="412" y="238" fill="#d4ff3a">RED-TEAM</text>
+    <text x="522" y="238" fill="#5b6157">·</text>
+    <text x="542" y="238" fill="#d4ff3a">LIVE TRACES</text>
+    <text x="682" y="238" fill="#5b6157">·</text>
+    <text x="702" y="238" fill="#d4ff3a">CI GATE</text>
+  </g>
+  <g transform="translate(930 60)">
+    <rect width="200" height="180" rx="4" fill="#121513" stroke="#262b27"/>
+    <text x="16" y="30" fill="#9aa096" font-family="'IBM Plex Mono', ui-monospace, monospace" font-size="11" letter-spacing="1.5">PASS RATE</text>
+    <text x="16" y="72" fill="#3ddc97" font-family="'IBM Plex Mono', ui-monospace, monospace" font-size="36">91.7%</text>
+    <g fill="#3ddc97">
+      <rect x="16" y="100" width="10" height="44"/><rect x="30" y="100" width="10" height="44"/><rect x="44" y="100" width="10" height="44"/><rect x="58" y="100" width="10" height="44"/>
+      <rect x="72" y="100" width="10" height="44" fill="#ff5a36"/><rect x="86" y="100" width="10" height="44"/><rect x="100" y="100" width="10" height="44"/><rect x="114" y="100" width="10" height="44"/>
+      <rect x="128" y="100" width="10" height="44"/><rect x="142" y="100" width="10" height="44" fill="#ff5a36"/><rect x="156" y="100" width="10" height="44"/><rect x="170" y="100" width="10" height="44"/>
+    </g>
+    <text x="16" y="166" fill="#5b6157" font-family="'IBM Plex Mono', ui-monospace, monospace" font-size="11" letter-spacing="1">GATE PASSED · 22/24</text>
+  </g>
+</svg>
