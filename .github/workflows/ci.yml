@@ -35,6 +35,8 @@ jobs:
         with: { node-version: '${{ env.NODE_VERSION }}', cache: npm }
       # npm 10.8 drops dependencies that have overrides; npm 11 installs the lockfile exactly.
       - run: npx -y npm@11 ci --no-audit --no-fund
+      # npm 11 does not run install scripts, so generate the Prisma client and build the shared packages here.
+      - run: npx prisma generate && npm run build:packages
       - run: npm run deps:check
       - run: npm run lint
       - run: npm run typecheck
@@ -49,6 +51,8 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: '${{ env.NODE_VERSION }}', cache: npm }
       - run: npx -y npm@11 ci --no-audit --no-fund
+      # npm 11 does not run install scripts, so generate the Prisma client and build the shared packages here.
+      - run: npx prisma generate && npm run build:packages
       - run: npm run test:coverage
       - uses: actions/upload-artifact@v4
         if: always()
@@ -82,6 +86,8 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: '${{ env.NODE_VERSION }}', cache: npm }
       - run: npx -y npm@11 ci --no-audit --no-fund
+      # npm 11 does not run install scripts, so generate the Prisma client and build the shared packages here.
+      - run: npx prisma generate && npm run build:packages
       - run: npm run db:reset:test
       - run: npm run test:int
 
@@ -95,6 +101,8 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: '${{ env.NODE_VERSION }}', cache: npm }
       - run: npx -y npm@11 ci --no-audit --no-fund
+      # npm 11 does not run install scripts, so generate the Prisma client and build the shared packages here.
+      - run: npx prisma generate && npm run build:packages
       - run: npm run db:reset:test
       - run: npm run test:contract
       - uses: actions/upload-artifact@v4
@@ -110,6 +118,8 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: '${{ env.NODE_VERSION }}', cache: npm }
       - run: npx -y npm@11 ci --no-audit --no-fund
+      # npm 11 does not run install scripts, so generate the Prisma client and build the shared packages here.
+      - run: npx prisma generate && npm run build:packages
       - run: npm run build
       - run: npm run build -w @evalpilot/web
       - uses: docker/setup-buildx-action@v3
@@ -130,6 +140,8 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: '${{ env.NODE_VERSION }}', cache: npm }
       - run: npx -y npm@11 ci --no-audit --no-fund
+      # npm 11 does not run install scripts, so generate the Prisma client and build the shared packages here.
+      - run: npx prisma generate && npm run build:packages
       - run: npx playwright install --with-deps chromium
       - run: npm run build && npm run build:web:e2e
       # Visual baselines are per platform; the first Linux run records them as artifacts.
@@ -154,6 +166,8 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: '${{ env.NODE_VERSION }}', cache: npm }
       - run: npx -y npm@11 ci --no-audit --no-fund
+      # npm 11 does not run install scripts, so generate the Prisma client and build the shared packages here.
+      - run: npx prisma generate && npm run build:packages
       - uses: grafana/setup-k6-action@v1
       - run: npm run build
       - run: SMOKE=1 RUNS=5 bash perf/run.sh
