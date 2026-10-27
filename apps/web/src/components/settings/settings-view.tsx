@@ -27,6 +27,7 @@ function Snippet({ step, title, text, code }: { step: number; title: string; tex
       </div>
       <div className="relative min-w-0">
         <pre
+          tabIndex={0}
           className="num overflow-x-auto rounded-sm border border-line bg-bg p-3 pr-20 text-[12px] leading-relaxed text-text"
           data-testid="ci-snippet"
         >

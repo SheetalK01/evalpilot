@@ -256,7 +256,9 @@ function CodeBlock({ title, children }: { title: string; children: ReactNode }) 
         <span className="size-2 rounded-full bg-line-strong" />
         <span className="label-mono ml-2">{title}</span>
       </figcaption>
-      <pre className="overflow-x-auto p-4 text-[12.5px] leading-6 text-muted">{children}</pre>
+      <pre tabIndex={0} className="overflow-x-auto p-4 text-[12.5px] leading-6 text-muted">
+        {children}
+      </pre>
     </figure>
   );
 }

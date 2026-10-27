@@ -1,49 +1,84 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/cn';
 
-const DIGITS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+const NUMBER = /\d[\d,]*(?:\.\d+)?/g;
+
+function parse(token: string): number {
+  return Number(token.replace(/,/g, ''));
+}
+
+function format(value: number, template: string): string {
+  const decimals = template.includes('.') ? (template.split('.')[1]?.length ?? 0) : 0;
+  const grouped = template.includes(',');
+  return value.toLocaleString('en-US', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+    useGrouping: grouped,
+  });
+}
 
 /**
- * Altimeter-style counter: each digit rolls on its own drum to the new value. Non-digit
- * characters (%, ms, $, .) stay put. Screen readers get the plain value.
+ * Builds the frame between `from` and `to` at progress `t` (0–1): every number in `to` is counted
+ * from its counterpart in `from` (or 0), formatted exactly like the target, so each frame shows
+ * whole, readable digits. Text around the numbers (%, ms, $, /) comes from the target.
  */
-export function RollingNumber({ value, className }: { value: string; className?: string }) {
-  // Start from zeros, then roll to the real value after mount.
-  const [shown, setShown] = useState(() => value.replace(/\d/g, '0'));
+export function interpolate(from: string, to: string, t: number): string {
+  const starts = (from.match(NUMBER) ?? []).map(parse);
+  let index = 0;
+  return to.replace(NUMBER, (token) => {
+    const target = parse(token);
+    const start = starts[index++] ?? 0;
+    return format(start + (target - start) * t, token);
+  });
+}
+
+const easeOut = (t: number) => 1 - (1 - t) ** 3;
+
+function prefersReducedMotion(): boolean {
+  return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+/**
+ * Altimeter-style readout: when the value changes, its numbers count quickly to the new value
+ * (ease-out). Screen readers get the final value only; motion is off under reduced motion.
+ */
+export function RollingNumber({
+  value,
+  className,
+  duration = 650,
+}: {
+  value: string;
+  className?: string;
+  duration?: number;
+}) {
+  const [shown, setShown] = useState(() => interpolate('', value, 0));
+  const shownRef = useRef(shown);
+
   useEffect(() => {
-    const frame = requestAnimationFrame(() => setShown(value));
+    if (prefersReducedMotion()) {
+      shownRef.current = value;
+      setShown(value);
+      return undefined;
+    }
+    const from = shownRef.current;
+    const started = performance.now();
+    let frame = 0;
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - started) / duration);
+      const next = t === 1 ? value : interpolate(from, value, easeOut(t));
+      shownRef.current = next;
+      setShown(next);
+      if (t < 1) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
-  }, [value]);
+  }, [value, duration]);
 
   return (
-    <span className={cn('num inline-flex', className)} aria-label={value} role="img">
-      {Array.from(shown).map((char, index) =>
-        /\d/.test(char) ? (
-          <span
-            key={index}
-            aria-hidden
-            className="relative inline-block h-[1em] overflow-hidden leading-none"
-            style={{ width: '0.62em' }}
-          >
-            <span
-              className="absolute inset-x-0 top-0 flex flex-col transition-transform duration-[650ms] ease-[cubic-bezier(0.16,1,0.3,1)]"
-              style={{ transform: `translateY(-${Number(char)}em)`, transitionDelay: `${index * 35}ms` }}
-            >
-              {DIGITS.map((digit) => (
-                <span key={digit} className="h-[1em] text-center">
-                  {digit}
-                </span>
-              ))}
-            </span>
-          </span>
-        ) : (
-          <span key={index} aria-hidden className="leading-none">
-            {char}
-          </span>
-        ),
-      )}
+    <span className={cn('num inline-block whitespace-nowrap', className)} role="img" aria-label={value}>
+      <span aria-hidden>{shown}</span>
     </span>
   );
 }

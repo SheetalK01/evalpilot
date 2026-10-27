@@ -4,7 +4,11 @@ import { Button } from '@/components/ui/button';
 
 export default function NotFound() {
   return (
-    <main id="main" className="flex min-h-dvh flex-col items-center justify-center px-6 text-center">
+    <main
+      id="main"
+      className="flex min-h-dvh flex-col items-center justify-center px-6 text-center"
+      data-testid="not-found"
+    >
       <InstrumentArt className="size-32" />
       <p className="label-mono mt-8 text-signal">ERROR 404 · OFF COURSE</p>
       <h1 className="mt-3 text-[34px] font-medium">This page is not on the chart.</h1>

@@ -11,7 +11,8 @@
   "workspaces": [
     "packages/*",
     "apps/*",
-    "contracts"
+    "contracts",
+    "e2e"
   ],
   "scripts": {
     "build": "npm run build:packages && npm run build -w @evalpilot/api -w @evalpilot/worker -w @evalpilot/shopbot",
@@ -37,7 +38,15 @@
     "dev:worker": "npm run dev -w @evalpilot/worker",
     "dev:shopbot": "npm run dev -w @evalpilot/shopbot",
     "cli": "node packages/cli/dist/index.js",
-    "test:contract": "npm run build && npm run test:pact -w @evalpilot/contracts"
+    "test:contract": "npm run build && npm run test:pact -w @evalpilot/contracts",
+    "build:web:e2e": "NEXT_DIST_DIR=.next-e2e NEXT_PUBLIC_DESIGN_PAGE=true NEXT_PUBLIC_API_URL=http://localhost:4400 npm run build -w @evalpilot/web",
+    "test:e2e": "npm run build && npm run build:web:e2e && npm test -w @evalpilot/e2e",
+    "test:e2e:only": "npm test -w @evalpilot/e2e --",
+    "test:load": "bash perf/run.sh",
+    "eval:judge": "npx tsx scripts/judge-eval.ts",
+    "smoke": "npx tsx scripts/smoke.ts",
+    "docker:up": "docker compose up --build -d",
+    "docker:down": "docker compose down"
   },
   "lint-staged": {
     "*.{ts,tsx,js,mjs,cjs}": [

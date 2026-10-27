@@ -12,6 +12,7 @@ describe('loadConfig', () => {
     expect(config).toMatchObject({
       env: 'development',
       isProduction: false,
+      cookieSecure: false,
       port: 4000,
       aiMode: 'mock',
       allowPrivateTargets: false,
@@ -59,6 +60,13 @@ describe('loadConfig', () => {
     const config = loadConfig({ ...base, NODE_ENV: 'production', ALLOW_PRIVATE_TARGETS: 'true' });
     expect(config.isProduction).toBe(true);
     expect(config.allowPrivateTargets).toBe(true);
+    expect(config.cookieSecure).toBe(true);
+  });
+
+  it('uses Secure cookies only in production unless COOKIE_SECURE says otherwise', () => {
+    expect(loadConfig(base).cookieSecure).toBe(false);
+    expect(loadConfig({ ...base, NODE_ENV: 'production', COOKIE_SECURE: 'false' }).cookieSecure).toBe(false);
+    expect(loadConfig({ ...base, COOKIE_SECURE: 'true' }).cookieSecure).toBe(true);
   });
 
   it('requires an Anthropic key in live mode', () => {

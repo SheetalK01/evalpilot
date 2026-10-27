@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Runs EvalPilot locally without Docker, on the MySQL and Redis of this machine:
 #   migrations → seed → API (4000) + worker + ShopBot (4100) + web (3000).
-# Ctrl+C stops everything.
+# Ctrl+C stops everything.  `--env-only` just prepares .env (secrets) and exits.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -27,6 +27,8 @@ needs() { ! grep -qE "^$1=[^<[:space:]]" .env; }
 needs JWT_SECRET && set_env JWT_SECRET "$(openssl rand -hex 32)" && echo "• generated JWT_SECRET"
 needs TARGET_SECRET_KEY && set_env TARGET_SECRET_KEY "$(openssl rand -base64 32)" && echo "• generated TARGET_SECRET_KEY"
 needs EVALPILOT_API_KEY && set_env EVALPILOT_API_KEY "ep_live_$(openssl rand -base64 24 | tr '+/' '-_' | tr -d '=')" && echo "• generated a local EVALPILOT_API_KEY for ShopBot traces"
+# `--env-only`: stop here (used before `docker compose up`).
+if [[ "${1:-}" == "--env-only" ]]; then echo "✓ .env is ready"; exit 0; fi
 
 # ── Checks ──────────────────────────────────────────────────────────────────
 node -e 'const [major, minor] = process.versions.node.split(".").map(Number); process.exit(major > 20 || (major === 20 && minor >= 17) ? 0 : 1)' || fail "Node 20.17+ is required (found $(node -v))."
@@ -37,6 +39,8 @@ fi
 # ── Build, migrate, seed ────────────────────────────────────────────────────
 [[ -d node_modules ]] || { bold "Installing dependencies…"; npm ci; }
 bold "Building shared packages…"
+# npm 11 skips install scripts, so make sure the Prisma client exists.
+npx prisma generate >/dev/null
 npm run build:packages --silent >/dev/null
 bold "Applying database migrations…"
 npx prisma migrate deploy >/dev/null || fail "Migrations failed. Is MySQL running (brew services start mysql) and DATABASE_URL correct?"

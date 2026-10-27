@@ -82,6 +82,9 @@ export async function download(path: string, fallbackName: string): Promise<void
     /filename="([^"]+)"/.exec(response.headers.get('content-disposition') ?? '')?.[1] ?? fallbackName;
   const url = URL.createObjectURL(await response.blob());
   const link = Object.assign(document.createElement('a'), { href: url, download: name });
+  document.body.append(link);
   link.click();
-  URL.revokeObjectURL(url);
+  link.remove();
+  // Revoking right away can cancel the download in Chromium; give it a moment first.
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }

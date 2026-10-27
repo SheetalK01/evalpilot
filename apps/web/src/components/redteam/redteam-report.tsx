@@ -72,7 +72,10 @@ function FindingRow({
               {finding.prompt}
             </pre>
             <h3 className="label-mono pt-2">ANSWER</h3>
-            <pre className="num max-h-60 overflow-auto rounded-sm border border-line bg-panel p-3 text-[12.5px] leading-relaxed whitespace-pre-wrap text-text">
+            <pre
+              tabIndex={0}
+              className="num max-h-60 overflow-auto rounded-sm border border-line bg-panel p-3 text-[12.5px] leading-relaxed whitespace-pre-wrap text-text"
+            >
               {finding.output ?? '— no answer —'}
             </pre>
           </section>

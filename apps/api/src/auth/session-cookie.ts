@@ -6,7 +6,7 @@ export function sessionCookieOptions(config: AppConfig): CookieOptions {
   return {
     httpOnly: true,
     sameSite: 'lax',
-    secure: config.isProduction,
+    secure: config.cookieSecure,
     path: '/',
     maxAge: config.jwt.ttlSeconds * 1000,
   };

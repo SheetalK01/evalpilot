@@ -85,7 +85,7 @@ export function SideNav({ onNavigate }: { onNavigate?: () => void }) {
                 active={
                   projectId === project.id && !pathname.startsWith('/app/settings') && pathname !== '/app'
                 }
-                testId="nav-project"
+                testId="project-card"
               >
                 <FolderKanban /> <span className="truncate">{project.name}</span>
               </NavLink>

@@ -22,6 +22,7 @@ module.exports = {
     'src/**/*.ts',
     '!src/**/*.d.ts',
     '!src/main.ts',
+    '!src/healthcheck.ts',
     '!src/config/load-env.ts',
     '!src/**/*.module.ts',
     '!src/**/*.spec.ts',

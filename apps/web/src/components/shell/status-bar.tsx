@@ -95,7 +95,7 @@ export function StatusBar({ onOpenNav }: { onOpenNav: () => void }) {
         >
           <Menu className="size-4" strokeWidth={1.5} />
         </button>
-        <Link href="/app" aria-label="Dashboard" className="shrink-0">
+        <Link href="/app" aria-label="EvalPilot dashboard" className="shrink-0">
           <Logo compact className="sm:hidden" />
           <Logo className="hidden sm:inline-flex" />
         </Link>
@@ -121,7 +121,7 @@ export function StatusBar({ onOpenNav }: { onOpenNav: () => void }) {
           <DropdownMenu>
             <DropdownMenuTrigger
               className="ml-1 inline-flex size-8 items-center justify-center rounded-sm border border-line bg-panel-2 font-mono text-[11px] text-text hover:border-line-strong"
-              aria-label="Account menu"
+              aria-label={`${initials} · account menu`}
               data-testid="user-menu"
             >
               {initials}

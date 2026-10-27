@@ -45,6 +45,8 @@ export const envSchema = z
     GITHUB_CLIENT_ID: optionalString,
     GITHUB_CLIENT_SECRET: optionalString,
     ALLOW_PRIVATE_TARGETS: booleanString.default(false),
+    /** `Secure` session cookie. Defaults to on in production; turn off only for plain-http local Docker. */
+    COOKIE_SECURE: booleanString.optional(),
     SHOPBOT_URL: z.url().default('http://localhost:4100'),
     /** How many runs one worker processes at the same time (each run tests 4 cases at a time). */
     WORKER_CONCURRENCY: z.coerce.number().int().min(1).max(50).default(4),
@@ -61,6 +63,8 @@ export const envSchema = z
 export interface AppConfig {
   env: 'development' | 'test' | 'production';
   isProduction: boolean;
+  /** Send the session cookie with `Secure`. */
+  cookieSecure: boolean;
   port: number;
   apiUrl: string;
   webUrl: string;
@@ -103,6 +107,7 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): AppConfig {
   return {
     env: env.NODE_ENV,
     isProduction: env.NODE_ENV === 'production',
+    cookieSecure: env.COOKIE_SECURE ?? env.NODE_ENV === 'production',
     port: env.API_PORT,
     apiUrl: env.API_URL,
     webUrl: env.WEB_URL,

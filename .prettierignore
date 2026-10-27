@@ -9,3 +9,6 @@ package-lock.json
 LICENSE
 docs/BUILD_SPEC.md
 docs/CLAUDE_PROMPT.md
+.next-e2e
+e2e/reports
+e2e/test-results
