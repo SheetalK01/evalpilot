@@ -1,0 +1,18 @@
+# Never send secrets or build output into the Docker build context.
+.env
+.env.*
+!.env.example
+**/node_modules
+**/dist
+**/.next
+**/.next-e2e
+**/coverage
+**/*.tsbuildinfo
+e2e/reports
+e2e/test-results
+perf/results
+contracts/pacts
+.git
+.github
+.husky
+docs/screenshots

@@ -1,0 +1,162 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# Throwaway values for the CI databases and test stack only (no real secrets live here).
+env:
+  NODE_VERSION: 20.20.2
+  AI_MODE: mock
+  DATABASE_URL: mysql://root:ci-root@127.0.0.1:3306/evalpilot_test
+  TEST_DATABASE_URL: mysql://root:ci-root@127.0.0.1:3306/evalpilot_test
+  SHADOW_DATABASE_URL: mysql://root:ci-root@127.0.0.1:3306/evalpilot_shadow
+  REDIS_URL: redis://127.0.0.1:6379
+  JWT_SECRET: ci-only-jwt-secret-0123456789abcdef0123456789abcdef
+  TARGET_SECRET_KEY: Y2ktb25seS10YXJnZXQta2V5LTMyLWJ5dGVzLWxvbmc=
+  HUSKY: '0'
+
+jobs:
+  lint:
+    name: Lint & typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '${{ env.NODE_VERSION }}', cache: npm }
+      # npm 10.8 drops dependencies that have overrides; npm 11 installs the lockfile exactly.
+      - run: npx -y npm@11 ci --no-audit --no-fund
+      - run: npm run deps:check
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm audit --omit=dev --audit-level=high
+
+  unit:
+    name: Unit tests + coverage
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '${{ env.NODE_VERSION }}', cache: npm }
+      - run: npx -y npm@11 ci --no-audit --no-fund
+      - run: npm run test:coverage
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage
+          path: |
+            packages/*/coverage
+            apps/*/coverage
+          retention-days: 14
+
+  integration:
+    name: Integration (MySQL + Redis)
+    needs: lint
+    runs-on: ubuntu-latest
+    services: &services
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: ci-root
+          MYSQL_DATABASE: evalpilot_test
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -pci-root" --health-interval=5s --health-timeout=5s --health-retries=20
+      redis:
+        image: redis:7.4-alpine
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd="redis-cli ping" --health-interval=5s --health-timeout=3s --health-retries=20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '${{ env.NODE_VERSION }}', cache: npm }
+      - run: npx -y npm@11 ci --no-audit --no-fund
+      - run: npm run db:reset:test
+      - run: npm run test:int
+
+  contract:
+    name: Contract (Pact)
+    needs: lint
+    runs-on: ubuntu-latest
+    services: *services
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '${{ env.NODE_VERSION }}', cache: npm }
+      - run: npx -y npm@11 ci --no-audit --no-fund
+      - run: npm run db:reset:test
+      - run: npm run test:contract
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: pacts, path: contracts/pacts, retention-days: 14 }
+
+  build:
+    name: Build (apps + Docker images)
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '${{ env.NODE_VERSION }}', cache: npm }
+      - run: npx -y npm@11 ci --no-audit --no-fund
+      - run: npm run build
+      - run: npm run build -w @evalpilot/web
+      - uses: docker/setup-buildx-action@v3
+      - name: Build Docker images
+        run: |
+          for app in api worker shopbot web; do
+            docker buildx build --load -f apps/$app/Dockerfile -t evalpilot-$app:ci .
+          done
+          docker image ls 'evalpilot-*'
+
+  e2e:
+    name: E2E (Playwright, all projects)
+    needs: [unit, integration]
+    runs-on: ubuntu-latest
+    services: *services
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '${{ env.NODE_VERSION }}', cache: npm }
+      - run: npx -y npm@11 ci --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build && npm run build:web:e2e
+      # Visual baselines are per platform; the first Linux run records them as artifacts.
+      - run: npm run test:e2e:only -- --update-snapshots=missing
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: |
+            e2e/reports
+            e2e/test-results
+            e2e/tests/visual/__snapshots__/linux
+          retention-days: 14
+
+  load:
+    name: Load smoke (k6)
+    needs: [unit, integration]
+    runs-on: ubuntu-latest
+    services: *services
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '${{ env.NODE_VERSION }}', cache: npm }
+      - run: npx -y npm@11 ci --no-audit --no-fund
+      - uses: grafana/setup-k6-action@v1
+      - run: npm run build
+      - run: SMOKE=1 RUNS=5 bash perf/run.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: k6-results, path: perf/results, retention-days: 14 }

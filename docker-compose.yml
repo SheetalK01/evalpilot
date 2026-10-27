@@ -1,0 +1,59 @@
+# EvalPilot in Docker: API, worker, web and ShopBot.
+# MySQL and Redis are NOT containers here: the services use the ones running on your machine
+# through host.docker.internal: a 127.0.0.1/localhost DATABASE_URL or REDIS_URL in .env is
+# rewritten for the containers automatically (docker/host-services.sh).
+#
+#   docker compose up --build        → http://localhost:3000
+name: evalpilot
+
+x-backend: &backend
+  env_file: .env
+  restart: unless-stopped
+  extra_hosts: ['host.docker.internal:host-gateway']
+  environment: &backend-env
+    NODE_ENV: production
+    SHOPBOT_URL: http://shopbot:4100
+    API_URL: ${API_URL:-http://localhost:4000}
+    WEB_URL: ${WEB_URL:-http://localhost:3000}
+    # Cookies stay usable over plain http://localhost; put the app behind HTTPS before going public.
+    COOKIE_SECURE: 'false'
+
+services:
+  api:
+    <<: *backend
+    build: { context: ., dockerfile: apps/api/Dockerfile }
+    image: evalpilot-api
+    ports: ['4000:4000']
+    depends_on:
+      shopbot: { condition: service_started }
+
+  worker:
+    <<: *backend
+    build: { context: ., dockerfile: apps/worker/Dockerfile }
+    image: evalpilot-worker
+    depends_on:
+      api: { condition: service_healthy }
+
+  shopbot:
+    env_file: .env
+    restart: unless-stopped
+    extra_hosts: ['host.docker.internal:host-gateway']
+    build: { context: ., dockerfile: apps/shopbot/Dockerfile }
+    image: evalpilot-shopbot
+    ports: ['4100:4100']
+    environment:
+      NODE_ENV: production
+      # ShopBot sends its own traces to the API service.
+      EVALPILOT_URL: http://api:4000
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${API_URL:-http://localhost:4000}
+    image: evalpilot-web
+    restart: unless-stopped
+    ports: ['3000:3000']
+    depends_on:
+      api: { condition: service_healthy }

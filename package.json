@@ -43,7 +43,10 @@
     "test:e2e": "npm run build && npm run build:web:e2e && npm test -w @evalpilot/e2e",
     "test:e2e:only": "npm test -w @evalpilot/e2e --",
     "test:load": "bash perf/run.sh",
-    "eval:judge": "npx tsx scripts/judge-eval.ts"
+    "eval:judge": "npx tsx scripts/judge-eval.ts",
+    "smoke": "npx tsx scripts/smoke.ts",
+    "docker:up": "docker compose up --build -d",
+    "docker:down": "docker compose down"
   },
   "lint-staged": {
     "*.{ts,tsx,js,mjs,cjs}": [
